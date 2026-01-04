@@ -1,23 +1,20 @@
-# Trackboard – Clean Supabase Version
+# Trackboard
 
-## 1. Create Supabase project
-https://supabase.com
+Trackboard is a local-first wellbeing notebook: mood, notes, calm tools, alcohol log, weekly goals, and lightweight insights.
 
-## 2. Create table
-```sql
-create table logs (
-  id uuid primary key default gen_random_uuid(),
-  date date not null,
-  type text not null,
-  value jsonb,
-  created_at timestamp default now()
-);
-```
+## Privacy
+- No accounts, no servers.
+- Your data is stored on this device (browser storage).
+- Optional passphrase adds a local lock and encrypts stored entries/weeks.
 
-## 3. Paste your keys
-Open `supabase.js` and replace:
-- SUPABASE_URL
-- SUPABASE_ANON_KEY
+## v1.2 (One-bundle)
+- Notebook-style UI (Calm Morning default)
+- Theme switcher: Calm Morning / Warm Notebook / Dark
+- Check-in redesign (mood highlight + persistence)
+- Alcohol redesign (neutral logging + “wait 10 minutes”)
+- Calm redesign (one-minute grounding + 3/8 min body scan)
+- Goals redesign (weekly only, “good enough week”, carry-forward)
+- Security: local passphrase lock + auto-lock options + unlock screen
 
-## 4. Deploy
-Upload files to GitHub Pages or open locally.
+## Deploy
+This project is built for GitHub Pages. Replace repo contents with the ZIP, commit, and push.

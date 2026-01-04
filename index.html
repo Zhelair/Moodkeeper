@@ -1,38 +1,51 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Trackboard</title>
-  <link rel="stylesheet" href="styles.css"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="#141414" name="theme-color"/>
+<title>Trackboard</title>
+<link href="manifest.webmanifest" rel="manifest"/>
+<link href="assets/app-icon-192.png" rel="icon"/>
+<link href="css/styles.css" rel="stylesheet"/>
 </head>
-<body>
-  <h1>Trackboard</h1>
-
-  <section id="log">
-    <h2>Log today</h2>
-
-    <div class="card">
-      <label>Mood (1–5)</label>
-      <input id="mood" type="number" min="1" max="5"/>
-      <button onclick="logMood()">Save mood</button>
-    </div>
-
-    <div class="card">
-      <label>Alcohol (drinks)</label>
-      <input id="alcohol" type="number" min="0"/>
-      <button onclick="logAlcohol()">Save alcohol</button>
-    </div>
-  </section>
-
-  <section id="insights">
-    <h2>This week</h2>
-    <pre id="insightsBox">Loading…</pre>
-  </section>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
-  <script src="insights.js"></script>
-  <script src="app.js"></script>
+<body class="theme-morning">
+<div class="app" id="app">
+<header class="topbar">
+<div class="brand">
+<div aria-hidden="true" class="logo"></div>
+<div>
+<div class="brand-title">Trackboard</div>
+<div class="brand-subtitle" id="brand-subtitle">Private · Stored on this device</div>
+</div>
+</div>
+<button aria-label="Settings" class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
+</header>
+<main aria-live="polite" class="view" id="view"></main>
+<nav class="bottomnav">
+<button class="navbtn" data-route="home">Home</button>
+<button class="navbtn" data-route="checkin">Check-in</button><button class="navbtn" data-route="practices">Practices</button>
+<button class="navbtn" data-route="calm">Calm</button>
+<button class="navbtn" data-route="alcohol">Alcohol</button>
+<button class="navbtn" data-route="insights">Insights</button>
+<button class="navbtn" data-route="goals">Goals</button>
+</nav>
+<div aria-atomic="true" aria-live="polite" class="toast" id="toast" role="status"></div>
+</div>
+<script src="js/security.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/router.js"></script>
+<script src="js/store.js"></script>
+<script src="js/features/home.js"></script>
+<script src="js/features/checkin.js"></script>
+<script src="js/features/alcohol.js"></script>
+<script src="js/features/stress.js"></script>
+<script src="js/features/goals.js"></script>
+<script src="js/features/calm.js"></script>
+<script src="js/features/insights.js"></script>
+<script src="js/features/settings.js"></script>
+<script src="js/features/unlock.js"></script>
+<script src="js/features/practices.js"></script><script src="js/app.js"></script>
 </body>
 </html>
