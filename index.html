@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trackboard</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <h1>Trackboard</h1>
+
+  <section id="log">
+    <h2>Log today</h2>
+
+    <div class="card">
+      <label>Mood (1–5)</label>
+      <input id="mood" type="number" min="1" max="5"/>
+      <button onclick="logMood()">Save mood</button>
+    </div>
+
+    <div class="card">
+      <label>Alcohol (drinks)</label>
+      <input id="alcohol" type="number" min="0"/>
+      <button onclick="logAlcohol()">Save alcohol</button>
+    </div>
+  </section>
+
+  <section id="insights">
+    <h2>This week</h2>
+    <pre id="insightsBox">Loading…</pre>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="insights.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
