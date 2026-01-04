@@ -1,0 +1,12 @@
+body{margin:0;font-family:system-ui,sans-serif}
+body[data-theme="warm"]{background:#f6f1e7;color:#2b2b2b}
+body[data-theme="night"]{background:#0b0d10;color:#e7edf5}
+.topbar{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #ccc}
+.tabs{display:flex;gap:8px;padding:8px;overflow-x:auto}
+.tab{border:1px solid #ccc;border-radius:999px;padding:8px 12px;cursor:pointer}
+.tab.active{background:#55d6a9}
+.container{padding:14px}
+.card{background:#fff;padding:14px;border-radius:12px;margin-bottom:12px}
+.btn{padding:10px;border-radius:10px;border:1px solid #ccc;cursor:pointer}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);opacity:0}
+.toast.show{opacity:1}
