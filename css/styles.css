@@ -482,19 +482,29 @@ body.theme-dark .calmspace-exit{
   width: 46px;
   height: 46px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.55);
+  /* Higher contrast so it doesn't disappear on very light backgrounds */
+  border: 1px solid rgba(0,0,0,.14);
+  background: rgba(255,255,255,.92);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow: var(--shadow);
+  /* Slightly stronger shadow to stay visible on pale canvases */
+  box-shadow: 0 10px 24px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.06);
   display: grid;
   place-items: center;
-  z-index: 30;
+  /* Above cards/nav/drawers */
+  z-index: 9998;
   padding: 0;
   cursor: pointer;
 }
+
 .companion-fab:active{ transform: translateY(1px); }
 .companion-fab:focus-visible{ outline: 2px solid rgba(39,174,96,.35); outline-offset: 2px; }
+
+body.theme-dark .companion-fab{
+  background: rgba(22,22,22,.70);
+  border-color: rgba(255,255,255,.18);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.25);
+}
 
 .companion-flower{
   width: 26px;
@@ -502,6 +512,8 @@ body.theme-dark .calmspace-exit{
   color: rgba(46,32,18,.55);
   animation: companionBreathe 10s ease-in-out infinite;
 }
+
+body.theme-dark .companion-flower{ color: rgba(255,255,255,.58); }
 @keyframes companionBreathe{
   0%,100%{ transform: translateY(0) scale(1); }
   50%{ transform: translateY(-2px) scale(1.03); }
