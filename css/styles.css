@@ -558,3 +558,10 @@ body.theme-dark .companion-flower{ color: rgba(255,255,255,.58); }
 .talkdrawer-body{
   padding: 14px;
 }
+
+.talkpanel{ display:flex; flex-direction:column; gap:12px; }
+.talktext{ min-height: 140px; resize: vertical; }
+.talkactions{ display:flex; flex-direction:column; gap:10px; }
+.talkprompt{ font-weight:600; }
+.talkfoot{ font-size: .92rem; }
+

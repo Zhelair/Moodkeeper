@@ -411,6 +411,9 @@
   // --- Companion (Phase C - Sprint 3 Step 1) ---
   let _talkDrawer = null;
   let _companionBtn = null;
+  let _talkTextEl = null;
+  let _talkDraft = '';
+
 
   function ensureTalkDrawer(){
     if(_talkDrawer) return _talkDrawer;
@@ -427,10 +430,36 @@
           onClick:()=> closeTalkPanel()
         }, ['✕'])
       ]),
-      h('div', { class:'talkdrawer-body' }, [
-        h('p', { class:'muted' }, [
-          'Talk panel is coming next step. ',
-          'For now this is the shell + navigation hook.'
+      h('div', { class:'talkdrawer-body talkpanel' }, [
+        h('div', { class:'talkprompt muted' }, ['What\'s on your mind?']),
+        (_talkTextEl = h('textarea', {
+          class:'talktext',
+          rows:'6',
+          placeholder:'Write here…',
+          onInput:(e)=>{ _talkDraft = e.target.value; }
+        }, [])),
+        h('div', { class:'talkactions' }, [
+          h('button', { class:'btn full', type:'button', onClick:()=>{
+            const t = (_talkDraft||'').trim();
+            if(!t){ toast('Nothing to save.'); return; }
+            // Default: notes are not stored. This is a deliberate “write and let go” action.
+            _talkDraft = '';
+            if(_talkTextEl) _talkTextEl.value = '';
+            toast('Done.');
+          }}, ['Just write']),
+          h('button', { class:'btn ghost full', type:'button', onClick:()=>{
+            const t = (_talkDraft||'').trim();
+            if(!t){ toast('Write a line first.'); return; }
+            toast('Mirror is coming next step.');
+          }}, ['Mirror this']),
+          h('button', { class:'btn ghost full', type:'button', onClick:()=>{
+            const t = (_talkDraft||'').trim();
+            if(!t){ toast('Write a line first.'); return; }
+            toast('Perspective is coming next step.');
+          }}, ['Gentle perspective'])
+        ]),
+        h('div', { class:'talkfoot muted' }, [
+          'No auto-save. Close anytime.'
         ])
       ])
     ]);
@@ -445,6 +474,8 @@
     const drawer = ensureTalkDrawer();
     drawer.classList.add('open');
     drawer.setAttribute('aria-hidden','false');
+    // Focus textarea for quick entry
+    try{ setTimeout(()=>{ _talkTextEl && _talkTextEl.focus(); }, 60); }catch(e){}
   }
 
   function closeTalkPanel(){
