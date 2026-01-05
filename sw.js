@@ -1,6 +1,6 @@
 
 // Bump this value whenever assets change so GitHub Pages + SW cache don't serve stale JS.
-const CACHE = 'moodkeeper-v1-6-6';
+const CACHE = 'moodkeeper-v1-6-8';
 const ASSETS = [
   './',
   './index.html',
