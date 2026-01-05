@@ -157,10 +157,11 @@ async function showCompanionIntro(){
       if(cur && cur !== 'unlock') TrackboardRouter.go(cur);
     });
     await showCompanionIntro();
-    TrackboardRouter.start();
-
-    // Initialize Companion shell (Phase C - Sprint 3 Step 1)
-    if(window.TrackboardUI && TrackboardUI.initCompanion) TrackboardUI.initCompanion();
+    TrackboardRouter.start();    // Initialize Companion shell
+    if(window.TrackboardUI){
+      if(TrackboardUI.syncCompanionFromSettings) await TrackboardUI.syncCompanionFromSettings();
+      else if(TrackboardUI.initCompanion) TrackboardUI.initCompanion();
+    }
 
     // If locked, go to unlock
     if(window.Security && Security.isEnabled() && !Security.isUnlocked()){

@@ -618,6 +618,30 @@ h('div', { class:'talkmeta' }, [
     _talkDrawer.setAttribute('aria-hidden','true');
   }
 
+  function destroyCompanion(){
+    try{ if(_talkDrawer){ _talkDrawer.remove(); } }catch(e){}
+    try{ if(_companionBtn){ _companionBtn.remove(); } }catch(e){}
+    _talkDrawer = null;
+    _talkTextEl = null;
+    _talkReplyEl = null;
+    _companionBtn = null;
+  }
+
+  async function syncCompanionFromSettings(){
+    // This must be called after Store is available (app boot).
+    if(!window.Store) return;
+    const enabled = await Store.getSetting('companion_enabled');
+    if(enabled){
+      if(!_companionBtn) initCompanion();
+    }else{
+      // Hide everywhere when disabled
+      if(_companionBtn || _talkDrawer) destroyCompanion();
+    }
+    const voice = await Store.getSetting('companion_voice');
+    if(voice){ setTalkVoice(voice); }
+  }
+
+
   function buildFlowerSVG(){
     // Abstract, non-animal flower: no face, no eyes, no emotional cues.
     return `
@@ -666,8 +690,9 @@ window.TrackboardUI = {
     fmtDate,
     weekBounds,
     inRange,
-    todayISO,
-    activeISO,
+    openCalmSpace,
+    // Active day helpers
+    getActiveISO,
     setActiveISO,
     resetActiveToToday,
     activeIsPast,
@@ -677,14 +702,14 @@ window.TrackboardUI = {
     setSubtitle,
     setActiveNav,
     openTimerModal,
+    // Companion
     initCompanion,
     openTalkPanel,
-    closeTalkPanel
-  ,
+    closeTalkPanel,
     setTalkVoice,
     destroyCompanion,
     syncCompanionFromSettings
-};
+  };
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };
 
