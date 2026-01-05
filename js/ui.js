@@ -445,7 +445,7 @@ function renderTalkReply(){
     return;
   }
   _talkReplyEl.style.display = '';
-  const kindLabel = _talkLast.kind === 'mirror' ? 'Mirror' : (_talkLast.kind === 'perspective' ? 'Gentle perspective' : 'Note');
+  const kindLabel = _talkLast.kind === 'mirror' ? 'Mirror' : (_talkLast.kind === 'perspective' ? 'Gentle perspective' : (_talkLast.kind === 'weekly' ? 'Weekly insight' : 'Note'));
   const voiceLabel = getTalkVoiceLabel(_talkLast.voice);
   _talkReplyEl.innerHTML = '';
   _talkReplyEl.appendChild(h('div', { class:'talkreply-meta muted' }, [kindLabel + ' · ' + voiceLabel]));
@@ -527,6 +527,105 @@ function runMock(kind){
   _talkLast = { kind, text: out, voice: _talkVoice, ts: Date.now() };
   renderTalkReply();
 }
+
+  async function runWeeklyInsight(){
+    try{
+      if(!window.Store){
+        _talkLast = { kind:'weekly', text:'I can’t read your entries yet. Try again in a moment.', voice:_talkVoice, ts:Date.now() };
+        renderTalkReply();
+        return;
+      }
+      const iso = (typeof getActiveISO === 'function') ? getActiveISO() : (Store.todayKey ? Store.todayKey() : new Date().toISOString().slice(0,10));
+      const bounds = weekBounds(new Date(iso + 'T00:00:00'));
+      const weekStartISO = bounds.start.toISOString().slice(0,10);
+      const days = await Store.getEntriesForWeek(weekStartISO);
+
+      // Collect signals
+      let moodSum = 0, moodN = 0;
+      let poorSleepN = 0;
+      let alcoholHad = 0, alcoholFree = 0;
+      const tagCounts = Object.create(null);
+
+      for(const d of days){
+        if(!d) continue;
+        if(typeof d.mood === 'number'){
+          moodSum += d.mood;
+          moodN += 1;
+        }
+        if(d.poorSleep) poorSleepN += 1;
+
+        if(d.alcohol && typeof d.alcohol === 'object'){
+          if(d.alcohol.status === 'had') alcoholHad += 1;
+          if(d.alcohol.status === 'free') alcoholFree += 1;
+        }
+
+        if(Array.isArray(d.tags)){
+          for(const t of d.tags){
+            if(!t) continue;
+            tagCounts[t] = (tagCounts[t] || 0) + 1;
+          }
+        }
+      }
+
+      // Top tag
+      let topTag = null, topTagN = 0;
+      for(const [t,n] of Object.entries(tagCounts)){
+        if(n > topTagN){ topTag = t; topTagN = n; }
+      }
+
+      // Compose (2–4 short sentences, per our rules)
+      const lines = [];
+      const label = `Week of ${weekStartISO}`;
+      // Line 1: mood
+      if(moodN >= 2){
+        const avg = Math.round((moodSum / moodN) * 10) / 10;
+        lines.push(`${label}: average mood ${avg}/5 across ${moodN} check-ins.`);
+      }else if(moodN === 1){
+        lines.push(`${label}: you logged one mood check-in so far.`);
+      }else{
+        lines.push(`${label}: not enough check-ins yet to spot a pattern.`);
+      }
+
+      // Line 2: alcohol
+      if((alcoholHad + alcoholFree) > 0){
+        const parts = [];
+        if(alcoholFree) parts.push(`${alcoholFree} alcohol-free`);
+        if(alcoholHad) parts.push(`${alcoholHad} with alcohol`);
+        lines.push(`Alcohol: ${parts.join(', ')} day${(alcoholHad+alcoholFree)===1?'':'s'}.`);
+      }
+
+      // Line 3: sleep
+      if(poorSleepN > 0){
+        lines.push(`Poor sleep was flagged on ${poorSleepN} day${poorSleepN===1?'':'s'}.`);
+      }
+
+      // Line 4: tags
+      if(topTag && topTagN >= 2){
+        lines.push(`Most common theme: “${topTag}” (${topTagN} times).`);
+      }
+
+      // Voice tweak: Direct removes softener
+      let text = lines.slice(0,4).join(' ');
+      if(_talkVoice === 'gentle' && moodN === 0){
+        text = text + ' If you want, log a quick check-in — even one word is enough.';
+      }
+      if(_talkVoice === 'supportive' && moodN >= 2){
+        text = text + ' If you want, pick one small action for tomorrow.';
+      }
+      if(_talkVoice === 'direct' && moodN >= 2){
+        // keep it tight, no extra sentence
+        text = lines.slice(0,4).join(' ');
+      }
+
+      _talkLast = { kind:'weekly', text, voice:_talkVoice, ts:Date.now() };
+      renderTalkReply();
+    }catch(err){
+      console.error(err);
+      _talkLast = { kind:'weekly', text:'I couldn’t build a weekly insight right now. Try again.', voice:_talkVoice, ts:Date.now() };
+      renderTalkReply();
+    }
+  }
+
   function ensureTalkDrawer(){
     if(_talkDrawer) return _talkDrawer;
 
@@ -589,7 +688,10 @@ h('div', { class:'talkmeta' }, [
           }}, ['Mirror this']),
           h('button', { class:'btn ghost full', type:'button', onClick:()=>{
             runMock('perspective');
-          }}, ['Gentle perspective'])
+          }}, ['Gentle perspective']),
+          h('button', { class:'btn ghost full', type:'button', onClick:()=>{
+            runWeeklyInsight();
+          }}, ['What did you notice this week?'])
         ]),
         h('div', { class:'talkfoot muted' }, [
           'No auto-save. Close anytime.'
