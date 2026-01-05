@@ -26,7 +26,7 @@
 
 
   function fmtDate(d){
-    return d.toLocaleDateString(undefined, {weekday:'long', month:'short', day:'numeric'});
+    return d.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
   }
 
   function weekBounds(d=new Date()){

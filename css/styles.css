@@ -361,7 +361,7 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 .gval{ font-weight:700; }
 .modal.open{ display:flex; }
 .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:18px; background: rgba(0,0,0,.28); z-index:999; }
-.modal-card{ width:min(560px, 100%); background: rgba(255,255,255,.92); border-radius:22px; border:1px solid rgba(0,0,0,.08); padding:16px; box-shadow: 0 20px 70px rgba(0,0,0,.18); }
+.modal-card{ width:min(560px, 100%); background: var(--card); color: var(--text); border-radius:22px; border:1px solid var(--border); padding:16px; box-shadow: var(--shadow); }
 .modal-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
 .toggle-row{ display:flex; align-items:center; gap:10px; padding:10px 0; }
 .toggle-row + .toggle-row{ border-top:1px solid rgba(0,0,0,.06); }
@@ -388,40 +388,5 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 .navbtn{ flex:0 0 auto; min-width: 88px; }
 
 
-
-/* === Sprint 1: Dark theme visibility fixes (readability pass) === */
-.theme-dark .tabbtn{
-  background: var(--card2);
-  color: var(--text);
-  border-color: rgba(255,255,255,.14);
-}
-.theme-dark .tabbtn.active{
-  background: var(--card);
-  border-color: rgba(255,255,255,.22);
-  box-shadow:none;
-}
-.theme-dark .toggle-row + .toggle-row,
-.theme-dark .practice-row + .practice-row{
-  border-top:1px solid var(--border);
-}
-.theme-dark .grid-card{
-  background: var(--card);
-  border-color: var(--border);
-}
-.theme-dark .count{
-  background: var(--card2);
-  color: var(--text);
-}
-.theme-dark .meter{
-  background: rgba(255,255,255,0.10);
-}
-.theme-dark .pill{
-  background: rgba(255,255,255,0.06);
-  color: var(--text);
-  border-color: rgba(255,255,255,.14);
-}
-.theme-dark .pill.ghost{
-  background: transparent;
-  color: var(--muted);
-  border-color: var(--border);
-}
+/* Dark theme: modal overlay slightly stronger for readability */
+body.theme-dark .modal{ background: rgba(0,0,0,.55); }
