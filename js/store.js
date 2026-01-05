@@ -70,7 +70,16 @@
       r.onerror = ()=> rej(r.error);
     }));
   }
-  function _getAllPlainEntries(){
+  
+  function _deletePlainEntry(date){
+    return withStore('entries','readwrite', (store)=> new Promise((res, rej)=>{
+      const r = store.delete(date);
+      r.onsuccess = ()=> res(true);
+      r.onerror = ()=> rej(r.error);
+    }));
+  }
+
+function _getAllPlainEntries(){
     return withStore('entries','readonly', (store)=> new Promise((res, rej)=>{
       const r = store.getAll();
       r.onsuccess = ()=> res(r.result || []);
@@ -124,7 +133,16 @@
       r.onerror = ()=> rej(r.error);
     }));
   }
-  function _getAllVaultRecords(prefix){
+  
+  function _deleteVaultRecord(key){
+    return withStore('vault','readwrite', (store)=> new Promise((res, rej)=>{
+      const r = store.delete(key);
+      r.onsuccess = ()=> res(true);
+      r.onerror = ()=> rej(r.error);
+    }));
+  }
+
+function _getAllVaultRecords(prefix){
     return withStore('vault','readonly', (store)=> new Promise((res, rej)=>{
       const r = store.getAll();
       r.onsuccess = ()=> {
@@ -162,6 +180,17 @@
     return _putPlainEntry(entry);
   }
 
+
+
+  async function deleteEntry(date){
+    const sec = await getSetting('security');
+    if(sec && sec.enabled){
+      if(!window.Security || !Security.isUnlocked()) throw new Error('Locked');
+      await _deleteVaultRecord(`entry:${date}`);
+      return true;
+    }
+    return _deletePlainEntry(date);
+  }
 
 async function getEntriesForWeek(weekStartISO){
   // weekStartISO: YYYY-MM-DD (Monday)
@@ -238,6 +267,7 @@ async function getEntriesForWeek(weekStartISO){
     todayKey,
     getEntry,
     putEntry,
+    deleteEntry,
     getAllEntries,
     getWeek,
     putWeek,
