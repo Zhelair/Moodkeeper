@@ -407,6 +407,94 @@
     });
   }
 
+
+  // --- Companion (Phase C - Sprint 3 Step 1) ---
+  let _talkDrawer = null;
+  let _companionBtn = null;
+
+  function ensureTalkDrawer(){
+    if(_talkDrawer) return _talkDrawer;
+
+    const drawer = h('div', { class:'talkdrawer', 'aria-hidden':'true' }, []);
+    const inner = h('div', { class:'talkdrawer-inner' }, [
+      h('div', { class:'talkdrawer-head' }, [
+        h('div', { class:'talkdrawer-title' }, ['Talk']),
+        h('button', {
+          class:'icon-btn talkdrawer-close',
+          type:'button',
+          'aria-label':'Close',
+          title:'Close',
+          onClick:()=> closeTalkPanel()
+        }, ['✕'])
+      ]),
+      h('div', { class:'talkdrawer-body' }, [
+        h('p', { class:'muted' }, [
+          'Talk panel is coming next step. ',
+          'For now this is the shell + navigation hook.'
+        ])
+      ])
+    ]);
+
+    drawer.appendChild(inner);
+    document.body.appendChild(drawer);
+    _talkDrawer = drawer;
+    return drawer;
+  }
+
+  function openTalkPanel(){
+    const drawer = ensureTalkDrawer();
+    drawer.classList.add('open');
+    drawer.setAttribute('aria-hidden','false');
+  }
+
+  function closeTalkPanel(){
+    if(!_talkDrawer) return;
+    _talkDrawer.classList.remove('open');
+    _talkDrawer.setAttribute('aria-hidden','true');
+  }
+
+  function buildFlowerSVG(){
+    // Abstract, non-animal flower: no face, no eyes, no emotional cues.
+    return `
+      <svg class="companion-flower" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <g fill="currentColor" opacity="0.18">
+          <circle cx="32" cy="10" r="7"/>
+          <circle cx="48" cy="16" r="7"/>
+          <circle cx="54" cy="32" r="7"/>
+          <circle cx="48" cy="48" r="7"/>
+          <circle cx="32" cy="54" r="7"/>
+          <circle cx="16" cy="48" r="7"/>
+          <circle cx="10" cy="32" r="7"/>
+          <circle cx="16" cy="16" r="7"/>
+        </g>
+        <circle cx="32" cy="32" r="10" fill="currentColor" opacity="0.12"/>
+      </svg>
+    `;
+  }
+
+  function initCompanion(){
+    if(_companionBtn) return;
+    const btn = h('button', {
+      class:'companion-fab',
+      type:'button',
+      title:'Talk',
+      'aria-label':'Talk',
+      onClick:(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        openTalkPanel();
+      }
+    }, []);
+    btn.innerHTML = buildFlowerSVG();
+    document.body.appendChild(btn);
+    _companionBtn = btn;
+
+    // Close on Escape
+    window.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Escape') closeTalkPanel();
+    });
+  }
+
 window.TrackboardUI = {
     toast,
     h,
@@ -423,7 +511,10 @@ window.TrackboardUI = {
     openDatePicker,
     setSubtitle,
     setActiveNav,
-    openTimerModal
+    openTimerModal,
+    initCompanion,
+    openTalkPanel,
+    closeTalkPanel
   };
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };

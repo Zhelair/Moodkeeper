@@ -472,3 +472,77 @@ body.theme-dark .calmspace-exit{
 .btn.full{
   width: 100%;
 }
+
+
+/* --- Companion (Phase C - Sprint 3 Step 1) --- */
+.companion-fab{
+  position: fixed;
+  right: 14px;
+  bottom: calc(var(--navH) + 18px);
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  z-index: 30;
+  padding: 0;
+  cursor: pointer;
+}
+.companion-fab:active{ transform: translateY(1px); }
+.companion-fab:focus-visible{ outline: 2px solid rgba(39,174,96,.35); outline-offset: 2px; }
+
+.companion-flower{
+  width: 26px;
+  height: 26px;
+  color: rgba(46,32,18,.55);
+  animation: companionBreathe 10s ease-in-out infinite;
+}
+@keyframes companionBreathe{
+  0%,100%{ transform: translateY(0) scale(1); }
+  50%{ transform: translateY(-2px) scale(1.03); }
+}
+
+/* Talk drawer shell */
+.talkdrawer{
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(360px, 92vw);
+  height: 100vh;
+  background: rgba(255,255,255,.66);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transform: translateX(102%);
+  transition: transform .18s ease;
+  z-index: 40;
+}
+.talkdrawer.open{ transform: translateX(0); }
+.talkdrawer-inner{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.talkdrawer-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.talkdrawer-title{
+  font-weight: 700;
+}
+.talkdrawer-close{
+  width: 36px;
+  height: 36px;
+}
+.talkdrawer-body{
+  padding: 14px;
+}
