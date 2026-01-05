@@ -461,7 +461,7 @@ function classifyTone(raw){
 
 function mockMirror(text){
   const tone = classifyTone(text);
-  if(_talkVoice === 'clear'){
+  if(_talkVoice === 'direct'){
     if(tone === 'tired') return 'You sound tired. The message feels low-energy and worn down.';
     if(tone === 'overwhelmed') return 'You sound overwhelmed. There are too many moving parts at once.';
     if(tone === 'anxiety') return 'You sound anxious. There’s a sense of uncertainty and tension.';
@@ -490,7 +490,7 @@ function mockMirror(text){
 }
 
 function mockPerspective(text){
-  if(_talkVoice === 'clear'){
+  if(_talkVoice === 'direct'){
     return 'You don’t need to solve this right now. One small, neutral next step is enough for today.';
   }
   if(_talkVoice === 'supportive'){
@@ -544,7 +544,7 @@ h('div', { class:'talkmeta' }, [
   h('select', { id:'talk-voice', class:'talkmeta-select', onChange:(e)=>{ setTalkVoice(e.target.value); toast('Voice: ' + getTalkVoiceLabel(_talkVoice)); if(_talkLast){ _talkLast.voice=_talkVoice; renderTalkReply(); } } }, [
     h('option', { value:'gentle' }, ['Gentle']),
     h('option', { value:'supportive' }, ['Supportive']),
-    h('option', { value:'clear' }, ['Clear'])
+    h('option', { value:'direct' }, ['Direct'])
   ])
 ]),
 (_talkReplyEl = h('div', { class:'talkreply', style:'display:none' }, [])),
@@ -555,13 +555,29 @@ h('div', { class:'talkmeta' }, [
           onInput:(e)=>{ _talkDraft = e.target.value; }
         }, [])),
         h('div', { class:'talkactions' }, [
-          h('button', { class:'btn full', type:'button', onClick:()=>{
+          h('button', { class:'btn full', type:'button', onClick:async ()=>{
             const t = (_talkDraft||'').trim();
             if(!t){ toast('Nothing to save.'); return; }
-            // Default: notes are not stored. This is a deliberate “write and let go” action.
+
+            let saved = false;
+            try{
+              const cb = _talkDrawer && _talkDrawer.querySelector('#talk-save');
+              const doSave = cb && cb.checked;
+              if(doSave && window.Store){
+                const key = (window.TrackboardUI && TrackboardUI.activeISO) ? TrackboardUI.activeISO() : Store.todayKey();
+                const existing = await Store.getEntry(key) || { date: key };
+                if(!existing.talk) existing.talk = [];
+                existing.talk.push({ ts: Date.now(), text: t });
+                await Store.putEntry(existing);
+                saved = true;
+              }
+            }catch(e){ saved = false; }
+
             _talkDraft = '';
             if(_talkTextEl) _talkTextEl.value = '';
-            toast('Done.');
+            // Reset checkbox for next message
+            try{ const cb2 = _talkDrawer && _talkDrawer.querySelector('#talk-save'); if(cb2) cb2.checked = false; }catch(e){}
+            toast(saved ? 'Saved.' : 'Done.');
           }}, ['Just write']),
           h('button', { class:'btn ghost full', type:'button', onClick:()=>{
             runMock('mirror');
@@ -664,7 +680,11 @@ window.TrackboardUI = {
     initCompanion,
     openTalkPanel,
     closeTalkPanel
-  };
+  ,
+    setTalkVoice,
+    destroyCompanion,
+    syncCompanionFromSettings
+};
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };
 
