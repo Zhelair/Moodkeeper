@@ -12,7 +12,11 @@
     const el = document.createElement(tag);
     for(const [k,v] of Object.entries(attrs||{})){
       if(k === 'class') el.className = v;
-      else if(k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else if(k.startsWith('on') && typeof v === 'function') {
+        // Allow both onclick and onClick style keys.
+        const evt = k.slice(2).toLowerCase();
+        el.addEventListener(evt, v);
+      }
       else if(v === false || v === null || v === undefined) {}
       else el.setAttribute(k, String(v));
     }

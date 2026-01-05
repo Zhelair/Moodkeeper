@@ -109,51 +109,6 @@ body.theme-dark .topbar{
   margin-top:2px;
 }
 
-/* Subtitle interactive date + past-day pill */
-.brand-subtitle .subwrap{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  flex-wrap:wrap;
-}
-.brand-subtitle .subdatebtn{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  border:1px solid var(--border);
-  background: var(--card2);
-  color: var(--muted);
-  border-radius: 999px;
-  padding:3px 8px;
-  font: inherit;
-  cursor:pointer;
-}
-/* Ensure taps on inner spans register as button taps on mobile */
-.brand-subtitle .subdatebtn *{ pointer-events:none; }
-.brand-subtitle .subdatebtn:hover{ filter: brightness(0.985); }
-.brand-subtitle .subcal{ opacity:0.9; }
-.brand-subtitle .pastpill{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:3px 8px;
-  border:1px solid var(--border);
-  background: transparent;
-  border-radius: 999px;
-  color: var(--muted);
-}
-.brand-subtitle .pilllink{
-  border:none;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  padding:0;
-  cursor:pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.brand-subtitle .pilllink:hover{ filter: brightness(0.98); }
-
 .view{
   width:100%;
   max-width: var(--maxw);
