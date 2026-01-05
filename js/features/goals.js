@@ -212,7 +212,76 @@
         ${bar('Practices', stats.practices, good.practicesTarget)}
         ${bar('Calm interrupts', stats.calm, good.calmTarget)}
         <div class="muted">You’re still in the game.</div>
+
+        <div class="row mt" style="gap:10px; flex-wrap:wrap;">
+          <button class="btn" id="wk-edit">Edit targets</button>
+          <button class="btn" id="wk-reset">Reset week</button>
+        </div>
       `;
+
+      // Edit targets (no data deleted; just changes minimums)
+      $('#wk-edit').addEventListener('click', ()=>{
+        const initial = {
+          alcoholFreeTarget: Number(good.alcoholFreeTarget||0) || 0,
+          practicesTarget: Number(good.practicesTarget||0) || 0,
+          calmTarget: Number(good.calmTarget||0) || 0
+        };
+        body.innerHTML = `
+          <div class="muted">Adjust the minimum win. Keep it kind.</div>
+          ${stepper('Alcohol-free days', 'alcoholFreeTarget', initial.alcoholFreeTarget, 0, 7)}
+          ${stepper('Practices (total)', 'practicesTarget', initial.practicesTarget, 0, 20)}
+          ${stepper('Calm interrupts', 'calmTarget', initial.calmTarget, 0, 30)}
+          <div class="hr"></div>
+          <div class="row" style="gap:10px; flex-wrap:wrap;">
+            <button class="btn primary" id="wk-edit-save">Save changes</button>
+            <button class="btn" id="wk-edit-cancel">Cancel</button>
+          </div>
+        `;
+
+        const state = {...initial};
+        function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+        function renderVals(){
+          $('#val-alcoholFreeTarget').textContent = state.alcoholFreeTarget;
+          $('#val-practicesTarget').textContent = state.practicesTarget;
+          $('#val-calmTarget').textContent = state.calmTarget;
+        }
+        renderVals();
+
+        body.addEventListener('click', (e)=>{
+          const b = e.target.closest('[data-step]');
+          if(!b) return;
+          const key = b.dataset.step;
+          const dir = b.dataset.dir === '+' ? 1 : -1;
+          if(key === 'alcoholFreeTarget') state.alcoholFreeTarget = clamp(state.alcoholFreeTarget + dir, 0, 7);
+          if(key === 'practicesTarget') state.practicesTarget = clamp(state.practicesTarget + dir, 0, 50);
+          if(key === 'calmTarget') state.calmTarget = clamp(state.calmTarget + dir, 0, 99);
+          renderVals();
+        }, { once:false });
+
+        $('#wk-edit-save').addEventListener('click', async ()=>{
+          weekRec.goodEnough = {...state};
+          await Store.putWeek(weekRec);
+          UI.toast('Targets updated.');
+          TrackboardRouter.go('goals');
+        });
+        $('#wk-edit-cancel').addEventListener('click', ()=>{
+          TrackboardRouter.go('goals');
+        });
+      });
+
+      // Full reset (targets + intention + reflection)
+      $('#wk-reset').addEventListener('click', async ()=>{
+        const ok = confirm('Reset this week?\n\nThis clears your weekly targets and notes. Daily logs stay on this device.');
+        if(!ok) return;
+        delete weekRec.goodEnough;
+        delete weekRec.startedAt;
+        delete weekRec.reflection;
+        weekRec.intention = '';
+        weekRec.carryForward = false;
+        await Store.putWeek(weekRec);
+        UI.toast('Week reset.');
+        TrackboardRouter.go('goals');
+      });
     }
 
     // Reflection
