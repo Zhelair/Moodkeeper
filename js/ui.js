@@ -90,7 +90,12 @@
     return _activeISO;
   }
 
-  function setActiveISO(iso){
+  
+
+  function getActiveISO(){
+    return activeISO();
+  }
+function setActiveISO(iso){
     if(!validISO(iso)) return;
     iso = clampISO(iso);
     if(iso === _activeISO) return;
@@ -692,6 +697,7 @@ window.TrackboardUI = {
     inRange,
     openCalmSpace,
     // Active day helpers
+    activeISO,
     getActiveISO,
     setActiveISO,
     resetActiveToToday,
