@@ -165,6 +165,121 @@
     openTimerModal
   };
 
-  window.UI = { toast, h, fmtDate, weekBounds, inRange };
+    function escapeHtml(s){
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  // Generic modal helpers (avoid browser prompt/confirm so language stays English)
+  function _ensureGenericModal(){
+    let modal = document.getElementById('tb-generic-modal');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'tb-generic-modal';
+      modal.className = 'modal';
+      modal.setAttribute('aria-hidden','true');
+      modal.innerHTML = `
+        <div class="modal-card" style="max-width:560px;">
+          <div class="modal-head">
+            <h3 id="tb-gm-title">Notice</h3>
+            <button class="icon-btn" id="tb-gm-close" aria-label="Close">✕</button>
+          </div>
+          <div id="tb-gm-body" class="mt"></div>
+          <div class="row mt" style="gap:10px; justify-content:flex-end;" id="tb-gm-actions"></div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', (e)=>{ if(e.target===modal) closeGeneric(); });
+      modal.querySelector('#tb-gm-close').addEventListener('click', closeGeneric);
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && modal.getAttribute('aria-hidden')==='false') closeGeneric(); });
+    }
+    return modal;
+  }
+
+  function closeGeneric(){
+    const modal = document.getElementById('tb-generic-modal');
+    if(!modal) return;
+    modal.setAttribute('aria-hidden','true');
+    modal.classList.remove('show');
+    // cleanup handlers by replacing actions container
+    const actions = modal.querySelector('#tb-gm-actions');
+    actions.innerHTML = '';
+  }
+
+  function confirmModal({title='Confirm', message='', okText='OK', cancelText='Cancel'}={}){
+    return new Promise((resolve)=>{
+      const modal = _ensureGenericModal();
+      modal.querySelector('#tb-gm-title').textContent = title;
+      const body = modal.querySelector('#tb-gm-body');
+      body.innerHTML = `<div class="p" style="margin:0;">${escapeHtml(String(message)).replace(/\n/g,'<br>')}</div>`;
+      const actions = modal.querySelector('#tb-gm-actions');
+      actions.innerHTML = `
+        <button class="btn" id="tb-gm-cancel">${escapeHtml(cancelText)}</button>
+        <button class="btn primary" id="tb-gm-ok">${escapeHtml(okText)}</button>
+      `;
+      actions.querySelector('#tb-gm-cancel').addEventListener('click', ()=>{ closeGeneric(); resolve(false); });
+      actions.querySelector('#tb-gm-ok').addEventListener('click', ()=>{ closeGeneric(); resolve(true); });
+
+      modal.setAttribute('aria-hidden','false');
+      modal.classList.add('show');
+    });
+  }
+
+  function promptModal({title='Edit', label='Value', value='', placeholder='', okText='Save', cancelText='Cancel'}={}){
+    return new Promise((resolve)=>{
+      const modal = _ensureGenericModal();
+      modal.querySelector('#tb-gm-title').textContent = title;
+      const body = modal.querySelector('#tb-gm-body');
+      body.innerHTML = `
+        <div class="small muted" style="margin-bottom:6px;">${escapeHtml(label)}</div>
+        <input id="tb-gm-input" class="input" type="text" value="${escapeHtml(String(value))}" placeholder="${escapeHtml(String(placeholder))}"/>
+      `;
+      const input = body.querySelector('#tb-gm-input');
+      const actions = modal.querySelector('#tb-gm-actions');
+      actions.innerHTML = `
+        <button class="btn" id="tb-gm-cancel">${escapeHtml(cancelText)}</button>
+        <button class="btn primary" id="tb-gm-ok">${escapeHtml(okText)}</button>
+      `;
+      function done(ok){
+        if(!ok){ closeGeneric(); resolve(null); return; }
+        const v = (input.value||'').trim();
+        closeGeneric();
+        resolve(v);
+      }
+      actions.querySelector('#tb-gm-cancel').addEventListener('click', ()=>done(false));
+      actions.querySelector('#tb-gm-ok').addEventListener('click', ()=>done(true));
+      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') done(true); });
+      modal.setAttribute('aria-hidden','false');
+      modal.classList.add('show');
+      setTimeout(()=> input.focus(), 50);
+      input.select();
+    });
+  }
+
+  function calmTextModal(text){
+    const modal = _ensureGenericModal();
+    modal.querySelector('#tb-gm-title').textContent = 'Take a breath';
+    const body = modal.querySelector('#tb-gm-body');
+    body.innerHTML = `
+      <div class="calm-pop">
+        <div class="calm-pop-text">${escapeHtml(String(text))}</div>
+        <div class="calm-pop-sub muted">Just read it once. That’s enough.</div>
+      </div>
+    `;
+    const actions = modal.querySelector('#tb-gm-actions');
+    actions.innerHTML = `<button class="btn primary" id="tb-gm-ok">OK</button>`;
+    actions.querySelector('#tb-gm-ok').addEventListener('click', closeGeneric);
+
+    modal.setAttribute('aria-hidden','false');
+    modal.classList.add('show');
+    // auto-close after ~6s (gentle). User can close earlier.
+    window.clearTimeout(calmTextModal._t);
+    calmTextModal._t = window.setTimeout(()=>{ closeGeneric(); }, 6500);
+  }
+
+window.UI = { toast, h, fmtDate, weekBounds, inRange, confirmModal, promptModal, calmTextModal, closeGeneric };
 
 })();

@@ -212,7 +212,128 @@
         ${bar('Practices', stats.practices, good.practicesTarget)}
         ${bar('Calm interrupts', stats.calm, good.calmTarget)}
         <div class="muted">You’re still in the game.</div>
+
+        <div class="row mt" style="gap:10px; flex-wrap:wrap;">
+          <button class="btn" id="wk-edit">Edit targets</button>
+          <button class="btn" id="wk-reset">Reset targets</button>
+        </div>
+
+        <div class="hr"></div>
+        <div class="h3">This week</div>
+        <div class="muted">Goals are direction, not obligation.</div>
+        <button class="btn" id="wk-reset-logs">Reset this week’s logs</button>
+        <div class="small muted">Clears Mon–Sun only. Other weeks stay.</div>
       `;
+
+      // Edit targets (no data deleted; just changes minimums)
+      $('#wk-edit').addEventListener('click', ()=>{
+        const initial = {
+          alcoholFreeTarget: Number(good.alcoholFreeTarget||0) || 0,
+          practicesTarget: Number(good.practicesTarget||0) || 0,
+          calmTarget: Number(good.calmTarget||0) || 0
+        };
+        body.innerHTML = `
+          <div class="muted">Adjust the minimum win. Keep it kind.</div>
+          ${stepper('Alcohol-free days', 'alcoholFreeTarget', initial.alcoholFreeTarget, 0, 7)}
+          ${stepper('Practices (total)', 'practicesTarget', initial.practicesTarget, 0, 20)}
+          ${stepper('Calm interrupts', 'calmTarget', initial.calmTarget, 0, 30)}
+          <div class="hr"></div>
+          <div class="row" style="gap:10px; flex-wrap:wrap;">
+            <button class="btn primary" id="wk-edit-save">Save changes</button>
+            <button class="btn" id="wk-edit-cancel">Cancel</button>
+          </div>
+        `;
+
+        const state = {...initial};
+        function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+        function renderVals(){
+          $('#val-alcoholFreeTarget').textContent = state.alcoholFreeTarget;
+          $('#val-practicesTarget').textContent = state.practicesTarget;
+          $('#val-calmTarget').textContent = state.calmTarget;
+        }
+        renderVals();
+
+        body.addEventListener('click', (e)=>{
+          const b = e.target.closest('[data-step]');
+          if(!b) return;
+          const key = b.dataset.step;
+          const dir = b.dataset.dir === '+' ? 1 : -1;
+          if(key === 'alcoholFreeTarget') state.alcoholFreeTarget = clamp(state.alcoholFreeTarget + dir, 0, 7);
+          if(key === 'practicesTarget') state.practicesTarget = clamp(state.practicesTarget + dir, 0, 50);
+          if(key === 'calmTarget') state.calmTarget = clamp(state.calmTarget + dir, 0, 99);
+          renderVals();
+        }, { once:false });
+
+        $('#wk-edit-save').addEventListener('click', async ()=>{
+          weekRec.goodEnough = {...state};
+          await Store.putWeek(weekRec);
+          UI.toast('Targets updated.');
+          TrackboardRouter.go('goals');
+        });
+        $('#wk-edit-cancel').addEventListener('click', ()=>{
+          TrackboardRouter.go('goals');
+        });
+      });
+
+      // Full reset (targets + intention + reflection)
+      $('#wk-reset').addEventListener('click', async ()=>{
+        const ok = await UI.confirmModal({title:'Reset targets', message:'Reset this week’s targets and notes?\n\nDaily logs stay on this device.', okText:'Reset', cancelText:'Cancel'});
+      // Reset THIS WEEK logs (Mon–Sun only)
+      $('#wk-reset-logs').addEventListener('click', async ()=>{
+        const ok = await UI.confirmModal({
+          title: 'Reset this week’s logs',
+          message: 'This clears ONLY the current week (Mon–Sun):\n• alcohol\n• check-in\n• calm interrupts\n• practices\n• notes/tags\n\nOther weeks stay on this device.',
+          okText: 'Reset logs',
+          cancelText: 'Cancel'
+        });
+        if(!ok) return;
+
+        const wb = UI.weekBounds(new Date());
+        const startISO = wb.start.toISOString().slice(0,10);
+        for(let i=0;i<7;i++){
+          const d = new Date(wb.start);
+          d.setDate(d.getDate()+i);
+          const iso = d.toISOString().slice(0,10);
+          const e = await Store.getEntry(iso);
+          if(!e) continue;
+
+          // Clear daily logs (keep date, keep anything unknown)
+          delete e.alcohol;
+          delete e.practices;
+          delete e.calmInterrupts;
+
+          // Check-in fields
+          delete e.mood;
+          delete e.stress;
+          delete e.notes;
+          delete e.positive;
+          delete e.sleepBed;
+          delete e.sleepWake;
+          delete e.poorSleep;
+          delete e.tags;
+
+          // Stress screen fields
+          delete e.stressTab;
+          delete e.rant;
+          delete e.dump;
+
+          await Store.putEntry({ ...e, date: iso });
+        }
+
+        UI.toast('This week cleared.');
+        TrackboardRouter.go('goals');
+      });
+
+        if(!ok) return;
+        delete weekRec.goodEnough;
+        delete weekRec.startedAt;
+        delete weekRec.reflection;
+        weekRec.intention = '';
+        weekRec.carryForward = false;
+        await Store.putWeek(weekRec);
+        UI.toast('Week reset.');
+        TrackboardRouter.go('goals');
+      });
     }
 
     // Reflection

@@ -1,6 +1,6 @@
 (function(){
   const DB_NAME = 'trackboard';
-  const DB_VER = 2;
+  const DB_VER = 3;
 
   const STORES = {
     entries: { keyPath: 'date' },
@@ -78,7 +78,15 @@
     }));
   }
 
-  function _getPlainWeek(weekKey){
+  
+  function _deletePlainEntry(date){
+    return withStore('entries','readwrite', (store)=> new Promise((res, rej)=>{
+      const r = store.delete(date);
+      r.onsuccess = ()=> res(true);
+      r.onerror = ()=> rej(r.error);
+    }));
+  }
+function _getPlainWeek(weekKey){
     return withStore('weeks','readonly', (store)=> new Promise((res, rej)=>{
       const r = store.get(weekKey);
       r.onsuccess = ()=> res(r.result || null);
@@ -117,7 +125,15 @@
       r.onerror = ()=> rej(r.error);
     }));
   }
-  function _getVaultRecord(key){
+  
+  function _deleteVaultRecord(key){
+    return withStore('vault','readwrite', (store)=> new Promise((res, rej)=>{
+      const r = store.delete(key);
+      r.onsuccess = ()=> res(true);
+      r.onerror = ()=> rej(r.error);
+    }));
+  }
+function _getVaultRecord(key){
     return withStore('vault','readonly', (store)=> new Promise((res, rej)=>{
       const r = store.get(key);
       r.onsuccess = ()=> res(r.result || null);
@@ -160,6 +176,17 @@
       return true;
     }
     return _putPlainEntry(entry);
+  }
+
+  async function deleteEntry(date){
+    const sec = await getSetting('security');
+    if(sec && sec.enabled){
+      if(!window.Security || !Security.isUnlocked()) throw new Error('Locked');
+      await _deleteVaultRecord(`entry:${date}`);
+      return true;
+    }
+    await _deletePlainEntry(date);
+    return true;
   }
 
 
@@ -238,6 +265,7 @@ async function getEntriesForWeek(weekStartISO){
     todayKey,
     getEntry,
     putEntry,
+    deleteEntry,
     getAllEntries,
     getWeek,
     putWeek,
