@@ -115,25 +115,16 @@
 
     stack.appendChild(bodyScan);
 
+    const calmText = (await Store.getSetting('calm_text')) || 'Life is Good!';
     const textCard = UI.h('div',{class:'card soft'},[
       UI.h('div',{class:'h2'},['Your calming text']),
-      UI.h('div',{class:'small'},['Read something that helps.']),
-      UI.h('div',{class:'small calm-read', id:'calm-read', style:'margin-top:6px; cursor:pointer;'},[(await Store.getSetting('calm_text')) || 'Life is Good!']),
+      UI.h('div',{class:'small'},['Tap to read']),
+      UI.h('div',{class:'small calm-tap', id:'calm-text-display', style:'margin-top:6px; cursor:pointer; user-select:none;'},[calmText]),
       UI.h('button',{class:'btn', type:'button', id:'btn-edit-calm', style:'margin-top:10px;'},['Edit'])
     ]);
     stack.appendChild(textCard);
 
     mount.appendChild(stack);
-
-    // Sprint 3: tap calming text to open popup
-    const calmRead = $('#calm-read');
-    if(calmRead){
-      calmRead.addEventListener('click', ()=>{
-        if(window.TrackboardUI && typeof TrackboardUI.openCalmPopup === 'function'){
-          TrackboardUI.openCalmPopup(calmRead.textContent.trim());
-        }
-      });
-    }
 
     function play(src){
       const a = document.getElementById('scan-audio');
@@ -144,9 +135,15 @@
     document.getElementById('btn-scan-3').addEventListener('click', ()=> play('assets/body-scan-3min.mp3'));
     document.getElementById('btn-scan-8').addEventListener('click', ()=> play('assets/body-scan-8min.mp3'));
 
-    document.getElementById('btn-edit-calm').addEventListener('click', async ()=>{
+    
+
+    document.getElementById('calm-text-display').addEventListener('click', async ()=>{
+      const txt = (await Store.getSetting('calm_text')) || 'Life is Good!';
+      UI.calmTextModal(txt);
+    });
+document.getElementById('btn-edit-calm').addEventListener('click', async ()=>{
       const cur = (await Store.getSetting('calm_text')) || 'Life is Good!';
-      const next = prompt('Your calming text:', cur);
+      const next = await UI.promptModal({title:'Edit calming text', label:'Your calming text', value:cur, placeholder:'Pause. Breathe. You are safe.', okText:'Save', cancelText:'Cancel'});
       if(next===null) return;
       await Store.setSetting('calm_text', next.trim());
       UI.toast('Saved.');
