@@ -167,4 +167,24 @@
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange };
 
+  TrackboardUI.openCalmPopup = function(text){
+  let modal = document.getElementById('calm-popup');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'calm-popup';
+    modal.className = 'modal open';
+    modal.innerHTML = `
+      <div class="modal-card calm-popup">
+        <div class="calm-big">${text}</div>
+        <button class="btn mt" id="calm-close">Close</button>
+      </div>
+    `;
+    modal.onclick = e => { if(e.target === modal) close(); };
+    document.body.appendChild(modal);
+    modal.querySelector('#calm-close').onclick = close;
+  }
+  modal.classList.add('open');
+  function close(){ modal.classList.remove('open'); }
+};
+
 })();
