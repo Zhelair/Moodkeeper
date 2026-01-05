@@ -39,7 +39,8 @@
       UI.h('div',{class:'h2'},['Take a moment.']),
       UI.h('div',{class:'small'},['Nothing else needs attention right now.']),
       (TrackboardUI.pastDayNoteEl ? TrackboardUI.pastDayNoteEl() : null),
-      UI.h('div',{class:'small muted', style:'margin-top:8px;'},[`This day: ${count} interrupt(s)`])
+      UI.h('div',{class:'small muted', style:'margin-top:8px;'},[`This day: ${count} interrupt(s)`]),
+      UI.h('button',{class:'btn full', type:'button', id:'btn-calm-space', style:'margin-top:10px;'},['Calm space'])
     ]));
 
     // Quick interrupt actions
@@ -127,6 +128,15 @@
     stack.appendChild(textCard);
 
     mount.appendChild(stack);
+
+    // Calm Space (full-screen, minimal)
+    document.getElementById('btn-calm-space').addEventListener('click', async ()=>{
+      const txt = (await Store.getSetting('calm_text')) || 'Life is Good!';
+      if(window.UI && UI.openCalmSpace){
+        await UI.openCalmSpace(txt);
+      }
+    });
+
 
     function play(src){
       const a = document.getElementById('scan-audio');

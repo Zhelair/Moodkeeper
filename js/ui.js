@@ -337,7 +337,77 @@
     return { close };
   }
 
-  window.TrackboardUI = {
+  
+  // Calm Space: full-screen, minimal, no timers, no rewards.
+  function openCalmSpace(text){
+    return new Promise((resolve)=>{
+      const existing = document.getElementById('calm-space');
+      if(existing) existing.remove();
+
+      const overlay = h('div',{class:'calmspace', id:'calm-space', role:'dialog', 'aria-modal':'true'},[]);
+      const bg = h('div',{class:'calmspace-bg', 'aria-hidden':'true'},[]);
+      const msg = h('div',{class:'calmspace-msg'},[String(text || '').trim() || 'Take a breath.']);
+      const exit = h('button',{class:'calmspace-exit', type:'button'},['Exit']);
+
+      overlay.appendChild(bg);
+      overlay.appendChild(msg);
+      overlay.appendChild(exit);
+
+      // Prevent background scroll
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      let controlsShown = false;
+      function showControls(){
+        if(controlsShown) return;
+        controlsShown = true;
+        overlay.classList.add('show-controls');
+      }
+      function close(){
+        document.body.style.overflow = prevOverflow;
+        overlay.classList.remove('open');
+        window.setTimeout(()=>{
+          overlay.remove();
+          resolve();
+        }, 180);
+      }
+
+      exit.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        close();
+      });
+
+      overlay.addEventListener('click', ()=>{
+        // First tap reveals the exit control. Subsequent taps keep it visible.
+        showControls();
+      });
+
+      function onKey(e){
+        if(e.key === 'Escape'){
+          e.preventDefault();
+          close();
+        }
+      }
+      document.addEventListener('keydown', onKey, { once:false });
+
+      const cleanup = ()=>{
+        document.removeEventListener('keydown', onKey);
+      };
+
+      // Ensure cleanup on close
+      const origClose = close;
+      close = ()=>{
+        cleanup();
+        origClose();
+      };
+
+      document.body.appendChild(overlay);
+      // Fade in
+      requestAnimationFrame(()=> overlay.classList.add('open'));
+    });
+  }
+
+window.TrackboardUI = {
     toast,
     h,
     fmtDate,
@@ -356,6 +426,6 @@
     openTimerModal
   };
 
-  window.UI = { toast, h, fmtDate, weekBounds, inRange };
+  window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };
 
 })();

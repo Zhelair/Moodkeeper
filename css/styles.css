@@ -386,3 +386,89 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 /* Bottom nav: allow more tabs */
 .bottomnav{ overflow-x:auto; justify-content:flex-start; gap:8px; padding: 0 10px; }
 .navbtn{ flex:0 0 auto; min-width: 88px; }
+
+
+/* Calm Space */
+.calmspace{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  opacity: 0;
+  transition: opacity 180ms ease;
+  overflow: hidden;
+}
+.calmspace.open{ opacity: 1; }
+
+.calmspace-bg{
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(800px 500px at 20% 30%, rgba(47,111,97,.16), rgba(0,0,0,0) 60%),
+    radial-gradient(700px 420px at 80% 60%, rgba(180,134,59,.10), rgba(0,0,0,0) 62%),
+    linear-gradient(120deg, rgba(255,255,255,.04), rgba(0,0,0,0));
+  filter: blur(0px);
+  opacity: .85;
+  animation: calmspace_drift 32s linear infinite;
+}
+body.theme-dark .calmspace-bg{
+  background:
+    radial-gradient(800px 500px at 20% 30%, rgba(59,122,114,.18), rgba(0,0,0,0) 60%),
+    radial-gradient(700px 420px at 80% 60%, rgba(179,139,62,.12), rgba(0,0,0,0) 62%),
+    linear-gradient(120deg, rgba(255,255,255,.03), rgba(0,0,0,0));
+  opacity: .75;
+}
+
+@keyframes calmspace_drift{
+  0%{ transform: translate3d(-2%, -1%, 0) scale(1.02); }
+  50%{ transform: translate3d(2%, 1%, 0) scale(1.04); }
+  100%{ transform: translate3d(-2%, -1%, 0) scale(1.02); }
+}
+
+.calmspace-msg{
+  position: relative;
+  max-width: min(820px, calc(100vw - 48px));
+  padding: 0 24px;
+  text-align: center;
+  font-size: 34px;
+  line-height: 1.25;
+  letter-spacing: -.01em;
+  color: var(--text);
+  text-wrap: balance;
+}
+@media (max-width: 520px){
+  .calmspace-msg{ font-size: 28px; padding: 0 18px; }
+}
+
+.calmspace-exit{
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.55);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+  transform: translateY(-4px);
+}
+body.theme-dark .calmspace-exit{
+  background: rgba(0,0,0,.35);
+}
+.calmspace.show-controls .calmspace-exit{
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Improve tap targets for full buttons in cards */
+.btn.full{
+  width: 100%;
+}
