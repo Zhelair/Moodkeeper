@@ -386,3 +386,23 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 /* Bottom nav: allow more tabs */
 .bottomnav{ overflow-x:auto; justify-content:flex-start; gap:8px; padding: 0 10px; }
 .navbtn{ flex:0 0 auto; min-width: 88px; }
+
+/* Sprint 3 — Calm popup */
+.calm-popup{
+  animation: calmIn .8s ease, calmPulse 6s ease-in-out;
+}
+.calm-big{
+  font-size:1.6rem;
+  line-height:1.5;
+  text-align:center;
+  padding:24px;
+}
+@keyframes calmIn{
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1; transform:none;}
+}
+@keyframes calmPulse{
+  0%,100%{box-shadow:none;}
+  50%{box-shadow:0 0 0 6px rgba(255,255,255,.08);}
+}
+
