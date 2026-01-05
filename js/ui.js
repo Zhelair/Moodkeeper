@@ -413,8 +413,115 @@
   let _companionBtn = null;
   let _talkTextEl = null;
   let _talkDraft = '';
+  let _talkReplyEl = null;
+  let _talkVoice = (localStorage.getItem('mk_voice') || 'gentle');
+  let _talkLast = null; // { kind, text, voice, ts }
 
 
+
+
+
+function setTalkVoice(v){
+  _talkVoice = (v === 'supportive' || v === 'clear') ? v : 'gentle';
+  try{ localStorage.setItem('mk_voice', _talkVoice); }catch(e){}
+}
+
+function getTalkVoiceLabel(v){
+  if(v === 'clear') return 'Clear';
+  if(v === 'supportive') return 'Supportive';
+  return 'Gentle';
+}
+
+function renderTalkReply(){
+  if(!_talkReplyEl) return;
+  if(!_talkLast){
+    _talkReplyEl.innerHTML = '';
+    _talkReplyEl.style.display = 'none';
+    return;
+  }
+  _talkReplyEl.style.display = '';
+  const kindLabel = _talkLast.kind === 'mirror' ? 'Mirror' : (_talkLast.kind === 'perspective' ? 'Gentle perspective' : 'Note');
+  const voiceLabel = getTalkVoiceLabel(_talkLast.voice);
+  _talkReplyEl.innerHTML = '';
+  _talkReplyEl.appendChild(h('div', { class:'talkreply-meta muted' }, [kindLabel + ' · ' + voiceLabel]));
+  _talkReplyEl.appendChild(h('div', { class:'talkreply-text' }, [_talkLast.text]));
+}
+
+function classifyTone(raw){
+  const t = (raw||'').toLowerCase();
+  const has = (arr)=> arr.some(w=> t.includes(w));
+  if(has(['angry','mad','furious','pissed','hate'])) return 'anger';
+  if(has(['anxious','anxiety','worried','panic','nervous','scared'])) return 'anxiety';
+  if(has(['sad','down','hopeless','empty','cry'])) return 'sadness';
+  if(has(['tired','exhausted','burnt','burned','sleepy'])) return 'tired';
+  if(has(['overwhelmed','too much','can\'t','cannot','stuck'])) return 'overwhelmed';
+  if(has(['meh','whatever','numb','blank'])) return 'flat';
+  return 'unclear';
+}
+
+function mockMirror(text){
+  const tone = classifyTone(text);
+  if(_talkVoice === 'clear'){
+    if(tone === 'tired') return 'You sound tired. The message feels low-energy and worn down.';
+    if(tone === 'overwhelmed') return 'You sound overwhelmed. There are too many moving parts at once.';
+    if(tone === 'anxiety') return 'You sound anxious. There’s a sense of uncertainty and tension.';
+    if(tone === 'anger') return 'You sound angry. The frustration comes through clearly.';
+    if(tone === 'sadness') return 'You sound down. The tone feels heavy and discouraged.';
+    if(tone === 'flat') return 'You sound flat. Not much emotion is coming through.';
+    return 'This reads as mixed and a bit tense. There may be more here than you want to name right now.';
+  }
+  if(_talkVoice === 'supportive'){
+    if(tone === 'tired') return 'This sounds like you’re running on fumes. Even naming it is a form of honesty.';
+    if(tone === 'overwhelmed') return 'It sounds like a lot is pressing at once. You don’t have to hold it perfectly.';
+    if(tone === 'anxiety') return 'There’s worry here — like your mind is scanning for what could go wrong. That’s exhausting.';
+    if(tone === 'anger') return 'I hear a real edge of frustration here. Something feels unfair or too much.';
+    if(tone === 'sadness') return 'This feels heavy. You’re carrying more than you want to admit.';
+    if(tone === 'flat') return 'This feels numb and distant — like you’re watching things from behind glass.';
+    return 'I’m hearing tension and a need for space. You may be closer to your truth than it feels.';
+  }
+  // gentle (default)
+  if(tone === 'tired') return 'It sounds like you’re tired — maybe more than you’ve had time to notice.';
+  if(tone === 'overwhelmed') return 'It sounds like things are piling up and you’re trying to stay afloat.';
+  if(tone === 'anxiety') return 'There’s a worried edge here, like your body is bracing for something.';
+  if(tone === 'anger') return 'There’s frustration here — sharp, but understandable.';
+  if(tone === 'sadness') return 'This feels heavy, like you’re moving through a thicker kind of day.';
+  if(tone === 'flat') return 'This feels muted and “meh” — not bad, not good, just distant.';
+  return 'This feels mixed — a bit tense, a bit tired. You may not need to name it perfectly.';
+}
+
+function mockPerspective(text){
+  if(_talkVoice === 'clear'){
+    return 'You don’t need to solve this right now. One small, neutral next step is enough for today.';
+  }
+  if(_talkVoice === 'supportive'){
+    return 'You don’t have to fix yourself in this moment. If all you do is soften the pace a little, that’s already something.';
+  }
+  return 'You don’t need to resolve this here. It’s okay to take one small, quiet step — or simply pause.';
+}
+
+function runMock(kind){
+  const t = (_talkDraft||'').trim();
+  // Fallbacks: no data / too little text
+  if(!t){
+    const msg = (kind === 'mirror')
+      ? 'There isn’t enough here for me to mirror yet.'
+      : 'There isn’t much here to reflect on yet. That’s okay.';
+    _talkLast = { kind, text: msg, voice: _talkVoice, ts: Date.now() };
+    renderTalkReply();
+    return;
+  }
+  if(t.length < 4){
+    const msg = (kind === 'mirror')
+      ? 'There isn’t enough here for me to mirror yet.'
+      : 'There isn’t much here to reflect on yet. That’s okay.';
+    _talkLast = { kind, text: msg, voice: _talkVoice, ts: Date.now() };
+    renderTalkReply();
+    return;
+  }
+  const out = (kind === 'mirror') ? mockMirror(t) : mockPerspective(t);
+  _talkLast = { kind, text: out, voice: _talkVoice, ts: Date.now() };
+  renderTalkReply();
+}
   function ensureTalkDrawer(){
     if(_talkDrawer) return _talkDrawer;
 
@@ -432,6 +539,15 @@
       ]),
       h('div', { class:'talkdrawer-body talkpanel' }, [
         h('div', { class:'talkprompt muted' }, ['What\'s on your mind?']),
+h('div', { class:'talkmeta' }, [
+  h('label', { class:'talkmeta-label muted', for:'talk-voice' }, ['Voice']),
+  h('select', { id:'talk-voice', class:'talkmeta-select', onChange:(e)=>{ setTalkVoice(e.target.value); toast('Voice: ' + getTalkVoiceLabel(_talkVoice)); if(_talkLast){ _talkLast.voice=_talkVoice; renderTalkReply(); } } }, [
+    h('option', { value:'gentle' }, ['Gentle']),
+    h('option', { value:'supportive' }, ['Supportive']),
+    h('option', { value:'clear' }, ['Clear'])
+  ])
+]),
+(_talkReplyEl = h('div', { class:'talkreply', style:'display:none' }, [])),
         (_talkTextEl = h('textarea', {
           class:'talktext',
           rows:'6',
@@ -448,14 +564,10 @@
             toast('Done.');
           }}, ['Just write']),
           h('button', { class:'btn ghost full', type:'button', onClick:()=>{
-            const t = (_talkDraft||'').trim();
-            if(!t){ toast('Write a line first.'); return; }
-            toast('Mirror is coming next step.');
+            runMock('mirror');
           }}, ['Mirror this']),
           h('button', { class:'btn ghost full', type:'button', onClick:()=>{
-            const t = (_talkDraft||'').trim();
-            if(!t){ toast('Write a line first.'); return; }
-            toast('Perspective is coming next step.');
+            runMock('perspective');
           }}, ['Gentle perspective'])
         ]),
         h('div', { class:'talkfoot muted' }, [
@@ -466,6 +578,12 @@
 
     drawer.appendChild(inner);
     document.body.appendChild(drawer);
+        // Set voice dropdown default
+    try{
+      const sel = drawer.querySelector('#talk-voice');
+      if(sel) sel.value = _talkVoice;
+    }catch(e){}
+
     _talkDrawer = drawer;
     return drawer;
   }

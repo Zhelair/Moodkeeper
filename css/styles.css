@@ -565,3 +565,10 @@ body.theme-dark .companion-flower{ color: rgba(255,255,255,.58); }
 .talkprompt{ font-weight:600; }
 .talkfoot{ font-size: .92rem; }
 
+
+.talkmeta{ display:flex; align-items:center; gap:10px; }
+.talkmeta-label{ font-size:.86rem; }
+.talkmeta-select{ flex:1; padding:10px 10px; border-radius:12px; border:1px solid var(--border); background: var(--card); color: var(--text); }
+.talkreply{ border:1px solid var(--border); border-radius:14px; background: var(--card); padding:12px; }
+.talkreply-meta{ font-size:.82rem; margin-bottom:6px; }
+.talkreply-text{ white-space:pre-wrap; line-height:1.35; }
