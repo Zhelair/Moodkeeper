@@ -57,21 +57,46 @@
   }
 
   // --- Active date (Phase A) ---
-  // Default resets to today on every fresh load (no persistence).
-  let _activeISO = todayISO();
+  // Persist active date locally so accidental refresh doesn't snap you back to today.
+  const ACTIVE_KEY = 'tb_activeISO';
+
+  function validISO(v){
+    return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  }
+
+  function clampISO(iso){
+    if(!validISO(iso)) return todayISO();
+    const t = todayISO();
+    if(iso > t) return t;
+    return iso;
+  }
+
+  function loadActiveISO(){
+    try{
+      const v = localStorage.getItem(ACTIVE_KEY);
+      return clampISO(v);
+    }catch(e){
+      return todayISO();
+    }
+  }
+
+  let _activeISO = loadActiveISO();
 
   function activeISO(){
     return _activeISO;
   }
 
   function setActiveISO(iso){
-    if(typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
-    // Clamp to today (no future dates)
-    const t = todayISO();
-    if(iso > t) iso = t;
+    if(!validISO(iso)) return;
+    iso = clampISO(iso);
     if(iso === _activeISO) return;
     _activeISO = iso;
+    try{ localStorage.setItem(ACTIVE_KEY, _activeISO); }catch(e){}
     window.dispatchEvent(new CustomEvent('tb:activeDate', { detail: { iso } }));
+  }
+
+  function resetActiveToToday(){
+    setActiveISO(todayISO());
   }
 
   function isPastDay(iso){
@@ -146,9 +171,66 @@
     modal.setAttribute('aria-hidden','false');
   }
 
+  function buildSubtitleNodes(text){
+    // If subtitle follows "Screen · Date · Private · Stored on this device",
+    // we render the Date as a clickable chip with a calendar icon.
+    // Otherwise, fall back to plain text.
+    const suffix = ' · Private · Stored on this device';
+    if(typeof text !== 'string' || !text.includes(suffix)){
+      return { mode:'plain', nodes:[document.createTextNode(String(text||''))] };
+    }
+    const head = text.slice(0, text.indexOf(suffix));
+    const parts = head.split(' · ');
+    if(parts.length < 2){
+      return { mode:'plain', nodes:[document.createTextNode(text)] };
+    }
+    const screen = parts[0];
+    const dateText = parts.slice(1).join(' · ');
+
+    const wrap = h('div', { class:'subwrap' }, [
+      h('span', { class:'subscreen' }, [screen, ' · ']),
+      h('button', {
+        class:'subdatebtn',
+        type:'button',
+        title:'Choose a day',
+        onClick:(e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          if(window.TrackboardUI && TrackboardUI.openDatePicker) TrackboardUI.openDatePicker();
+        }
+      }, [
+        h('span', { class:'subdate' }, [dateText]),
+        h('span', { class:'subcal' , 'aria-hidden':'true' }, ['📅'])
+      ]),
+      h('span', { class:'subrest' }, [suffix])
+    ]);
+
+    // Past-day pill (persistent) when active date is not today.
+    if(activeIsPast()){
+      const pill = h('span', { class:'pastpill' }, [
+        h('span', {}, ['Logging: ', fmtActive()]),
+        h('button', {
+          class:'pilllink',
+          type:'button',
+          onClick:(e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            resetActiveToToday();
+          }
+        }, ['Go to Today'])
+      ]);
+      wrap.appendChild(pill);
+    }
+
+    return { mode:'rich', nodes:[wrap] };
+  }
+
   function setSubtitle(text){
     const el = document.getElementById('brand-subtitle');
-    if(el) el.textContent = text;
+    if(!el) return;
+    el.innerHTML = '';
+    const built = buildSubtitleNodes(text);
+    built.nodes.forEach(n=> el.appendChild(n));
   }
 
   function setActiveNav(route){
@@ -252,6 +334,7 @@
     todayISO,
     activeISO,
     setActiveISO,
+    resetActiveToToday,
     activeIsPast,
     fmtActive,
     pastDayNoteEl,

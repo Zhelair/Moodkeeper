@@ -31,13 +31,16 @@
     }
 
     // Active date picker (Phase A)
+    // The subtitle renders a date button with a calendar icon; we also allow clicking
+    // empty subtitle space to open the date picker (helpful on mobile).
     const sub = document.getElementById('brand-subtitle');
     if(sub){
-      sub.style.cursor = 'pointer';
       sub.title = 'Choose a day';
-      sub.addEventListener('click', ()=>{
+      sub.addEventListener('click', (e)=>{
         const cur = TrackboardRouter.current && TrackboardRouter.current();
         if(cur === 'unlock') return;
+        // If a real button was clicked (date button / go-to-today), let it handle.
+        if(e.target && e.target.closest && e.target.closest('button')) return;
         if(window.TrackboardUI && TrackboardUI.openDatePicker){
           TrackboardUI.openDatePicker();
         }

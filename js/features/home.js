@@ -1,8 +1,12 @@
 (function(){
   TrackboardRouter.register('home', async (mount)=>{
-    const d = new Date();
-    document.getElementById('brand-subtitle').textContent =
-      `Today · ${UI.fmtDate(d)} · Private · Stored on this device`;
+    const d = new Date((TrackboardUI.activeISO ? TrackboardUI.activeISO() : TrackboardUI.todayISO()) + 'T00:00:00');
+    if(window.TrackboardUI && TrackboardUI.setSubtitle){
+      TrackboardUI.setSubtitle(`Today · ${UI.fmtDate(d)} · Private · Stored on this device`);
+    } else {
+      document.getElementById('brand-subtitle').textContent =
+        `Today · ${UI.fmtDate(d)} · Private · Stored on this device`;
+    }
 
     const stack = UI.h('div',{class:'stack'},[]);
 

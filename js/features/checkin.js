@@ -17,11 +17,12 @@
     const key = (window.TrackboardUI && TrackboardUI.activeISO) ? TrackboardUI.activeISO() : Store.todayKey();
     const existing = await Store.getEntry(key) || {date:key};
 
-    if(window.TrackboardUI){
-      TrackboardUI.setActiveNav('checkin');
-      TrackboardUI.setSubtitle(`Check-in · ${TrackboardUI.fmtActive ? TrackboardUI.fmtActive() : key} · Private · Stored on this device`);
+    if(window.TrackboardUI) TrackboardUI.setActiveNav('checkin');
+    const dateTxt = (window.TrackboardUI && TrackboardUI.fmtActive) ? TrackboardUI.fmtActive() : key;
+    if(window.TrackboardUI && TrackboardUI.setSubtitle){
+      TrackboardUI.setSubtitle(`Check-in · ${dateTxt} · Private · Stored on this device`);
     } else {
-      document.getElementById('brand-subtitle').textContent = 'Check-in · Private · Stored on this device';
+      document.getElementById('brand-subtitle').textContent = `Check-in · ${dateTxt} · Private · Stored on this device`;
     }
 
     const stack = UI.h('div',{class:'stack'},[]);

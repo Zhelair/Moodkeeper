@@ -1,6 +1,10 @@
 (function(){
   TrackboardRouter.register('unlock', async (mount)=>{
-    document.getElementById('brand-subtitle').textContent = 'Locked · Local passphrase';
+    if(window.TrackboardUI && TrackboardUI.setSubtitle){
+      TrackboardUI.setSubtitle('Locked · Local passphrase');
+    } else {
+      document.getElementById('brand-subtitle').textContent = 'Locked · Local passphrase';
+    }
 
     const wrap = UI.h('div',{class:'lockwrap'},[]);
     const card = UI.h('div',{class:'card'},[

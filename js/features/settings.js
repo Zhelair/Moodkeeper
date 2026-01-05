@@ -1,6 +1,10 @@
 (function(){
   TrackboardRouter.register('settings', async (mount)=>{
-    document.getElementById('brand-subtitle').textContent = 'Settings · Private · Stored on this device';
+    if(window.TrackboardUI && TrackboardUI.setSubtitle){
+      TrackboardUI.setSubtitle('Settings · Private · Stored on this device');
+    } else {
+      document.getElementById('brand-subtitle').textContent = 'Settings · Private · Stored on this device';
+    }
 
     const stack = UI.h('div',{class:'stack'},[]);
 
