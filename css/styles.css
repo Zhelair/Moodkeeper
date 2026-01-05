@@ -387,22 +387,25 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 .bottomnav{ overflow-x:auto; justify-content:flex-start; gap:8px; padding: 0 10px; }
 .navbtn{ flex:0 0 auto; min-width: 88px; }
 
-/* Sprint 3 — Calm popup */
-.calm-popup{
-  animation: calmIn .8s ease, calmPulse 6s ease-in-out;
-}
-.calm-big{
-  font-size:1.6rem;
-  line-height:1.5;
-  text-align:center;
-  padding:24px;
+
+/* Sprint 3: calm popup ritual */
+.calm-read{ user-select:none; }
+.calm-ritual{
+  font-size: 1.6rem;
+  line-height: 1.5;
+  text-align: center;
+  padding: 18px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.06);
+  animation: calmIn 600ms ease, calmGlow 6s ease-in-out;
 }
 @keyframes calmIn{
-  from{opacity:0; transform:translateY(10px);}
-  to{opacity:1; transform:none;}
+  from{ opacity:0; transform: translateY(8px); }
+  to{ opacity:1; transform:none; }
 }
-@keyframes calmPulse{
-  0%,100%{box-shadow:none;}
-  50%{box-shadow:0 0 0 6px rgba(255,255,255,.08);}
+@keyframes calmGlow{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(255,255,255,0.0); }
+  50%{ box-shadow: 0 0 0 8px rgba(255,255,255,0.07); }
 }
 
+.btn.danger{ background: var(--danger); color:#fff; border-color: transparent; }
