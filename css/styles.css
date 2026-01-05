@@ -388,24 +388,9 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 .navbtn{ flex:0 0 auto; min-width: 88px; }
 
 
-/* Sprint 3: calm popup ritual */
-.calm-read{ user-select:none; }
-.calm-ritual{
-  font-size: 1.6rem;
-  line-height: 1.5;
-  text-align: center;
-  padding: 18px 14px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.06);
-  animation: calmIn 600ms ease, calmGlow 6s ease-in-out;
-}
-@keyframes calmIn{
-  from{ opacity:0; transform: translateY(8px); }
-  to{ opacity:1; transform:none; }
-}
-@keyframes calmGlow{
-  0%,100%{ box-shadow: 0 0 0 0 rgba(255,255,255,0.0); }
-  50%{ box-shadow: 0 0 0 8px rgba(255,255,255,0.07); }
-}
-
-.btn.danger{ background: var(--danger); color:#fff; border-color: transparent; }
+/* Sprint 3: calm popup animation */
+.calm-pop{ text-align:center; padding:6px 2px; animation: calmFade 6.5s ease-in-out; }
+.calm-pop-text{ font-size:22px; line-height:1.35; font-weight:700; margin:10px 0; }
+.calm-pop-sub{ margin-top:8px; }
+@keyframes calmFade{ 0%{opacity:0; transform:scale(.98);} 12%{opacity:1; transform:scale(1);} 82%{opacity:1;} 100%{opacity:.65;} }
+.calm-tap:hover{ text-decoration: underline; }
