@@ -68,7 +68,8 @@
   }
 
   // Minimal in-app timer (used by Alcohol wait flow). Creates/updates a modal.
-  function openTimerModal(seconds, onDone){
+  function openTimerModal,
+    openCalmPopup(seconds, onDone){
     let modal = document.getElementById('tb-timer-modal');
     if(!modal){
       modal = document.createElement('div');
@@ -153,6 +154,68 @@
     return { close };
   }
 
+  
+  function openCalmPopup(text){
+    let modal = document.getElementById('tb-calm-modal');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'tb-calm-modal';
+      modal.className = 'modal';
+      modal.setAttribute('aria-hidden','true');
+      modal.innerHTML = `
+        <div class="modal-card" style="max-width:720px;">
+          <div class="modal-head">
+            <h3>Your calming text</h3>
+            <button class="icon-btn" id="tb-calm-close" aria-label="Close">✕</button>
+          </div>
+          <div id="tb-calm-body" class="mt"></div>
+        </div>`;
+      document.body.appendChild(modal);
+
+      const closeBtn = modal.querySelector('#tb-calm-close');
+      closeBtn.addEventListener('click', close);
+      modal.addEventListener('click', (e)=>{ if(e.target === modal) close(); });
+    }
+
+    const body = modal.querySelector('#tb-calm-body');
+    body.innerHTML = `
+      <div class="calm-ritual">${escapeHtml(String(text||''))}</div>
+      <div class="muted mt" style="text-align:center;">You don’t have to fix everything right now.</div>
+      <div class="row mt" style="gap:10px; justify-content:center;">
+        <button class="btn primary" id="tb-calm-ok">I’m okay</button>
+      </div>
+    `;
+
+    const okBtn = modal.querySelector('#tb-calm-ok');
+    okBtn.addEventListener('click', close, { once:true });
+
+    // animate: reflow trick so animation restarts each open
+    const ritual = modal.querySelector('.calm-ritual');
+    ritual.classList.remove('calm-ritual');
+    void ritual.offsetWidth; // reflow
+    ritual.classList.add('calm-ritual');
+
+    open();
+    function open(){
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+    }
+    function close(){
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+    }
+  }
+
+  function escapeHtml(s){
+    return s
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#039;');
+  }
+
+
   window.TrackboardUI = {
     toast,
     h,
@@ -162,29 +225,10 @@
     todayISO,
     setSubtitle,
     setActiveNav,
-    openTimerModal
+    openTimerModal,
+    openCalmPopup
   };
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange };
-
-  TrackboardUI.openCalmPopup = function(text){
-  let modal = document.getElementById('calm-popup');
-  if(!modal){
-    modal = document.createElement('div');
-    modal.id = 'calm-popup';
-    modal.className = 'modal open';
-    modal.innerHTML = `
-      <div class="modal-card calm-popup">
-        <div class="calm-big">${text}</div>
-        <button class="btn mt" id="calm-close">Close</button>
-      </div>
-    `;
-    modal.onclick = e => { if(e.target === modal) close(); };
-    document.body.appendChild(modal);
-    modal.querySelector('#calm-close').onclick = close;
-  }
-  modal.classList.add('open');
-  function close(){ modal.classList.remove('open'); }
-};
 
 })();
