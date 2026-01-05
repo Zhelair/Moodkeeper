@@ -205,23 +205,6 @@
         TrackboardRouter.go('goals');
       });
 
-      // Sprint 3: Reset THIS WEEK logs (Mon–Sun entries only)
-      $('#wk-reset-logs').addEventListener('click', async ()=>{
-        const ok2 = confirm('Reset THIS WEEK logs (Mon–Sun)?\n\nThis deletes daily entries for the current week. Other weeks stay.');
-        if(!ok2) return;
-        const todayISO = TrackboardUI.todayISO();
-        const start = startOfWeekISO(todayISO);
-        const startD = new Date(start + "T00:00:00");
-        for(let i=0;i<7;i++){
-          const d = new Date(startD);
-          d.setDate(startD.getDate()+i);
-          const iso = d.toISOString().slice(0,10);
-          try{ await Store.deleteEntry(iso); }catch(e){}
-        }
-        UI.toast('This week logs cleared.');
-        TrackboardRouter.go('goals');
-      });
-
     }else{
       // progress view
       body.innerHTML = `
@@ -232,10 +215,14 @@
 
         <div class="row mt" style="gap:10px; flex-wrap:wrap;">
           <button class="btn" id="wk-edit">Edit targets</button>
-          <button class="btn" id="wk-reset">Reset week</button>
-          <button class="btn danger" id="wk-reset-logs">Reset THIS WEEK logs</button>
+          <button class="btn" id="wk-reset">Reset targets</button>
         </div>
-        <div class="tiny muted mt">“Reset week” clears targets/notes. “Reset THIS WEEK logs” clears Mon–Sun entries.</div>
+
+        <div class="hr"></div>
+        <div class="h3">This week</div>
+        <div class="muted">Goals are direction, not obligation.</div>
+        <button class="btn" id="wk-reset-logs">Reset this week’s logs</button>
+        <div class="small muted">Clears Mon–Sun only. Other weeks stay.</div>
       `;
 
       // Edit targets (no data deleted; just changes minimums)
@@ -290,7 +277,53 @@
 
       // Full reset (targets + intention + reflection)
       $('#wk-reset').addEventListener('click', async ()=>{
-        const ok = confirm('Reset this week?\n\nThis clears your weekly targets and notes. Daily logs stay on this device.');
+        const ok = await UI.confirmModal({title:'Reset targets', message:'Reset this week’s targets and notes?\n\nDaily logs stay on this device.', okText:'Reset', cancelText:'Cancel'});
+      // Reset THIS WEEK logs (Mon–Sun only)
+      $('#wk-reset-logs').addEventListener('click', async ()=>{
+        const ok = await UI.confirmModal({
+          title: 'Reset this week’s logs',
+          message: 'This clears ONLY the current week (Mon–Sun):\n• alcohol\n• check-in\n• calm interrupts\n• practices\n• notes/tags\n\nOther weeks stay on this device.',
+          okText: 'Reset logs',
+          cancelText: 'Cancel'
+        });
+        if(!ok) return;
+
+        const wb = UI.weekBounds(new Date());
+        const startISO = wb.start.toISOString().slice(0,10);
+        for(let i=0;i<7;i++){
+          const d = new Date(wb.start);
+          d.setDate(d.getDate()+i);
+          const iso = d.toISOString().slice(0,10);
+          const e = await Store.getEntry(iso);
+          if(!e) continue;
+
+          // Clear daily logs (keep date, keep anything unknown)
+          delete e.alcohol;
+          delete e.practices;
+          delete e.calmInterrupts;
+
+          // Check-in fields
+          delete e.mood;
+          delete e.stress;
+          delete e.notes;
+          delete e.positive;
+          delete e.sleepBed;
+          delete e.sleepWake;
+          delete e.poorSleep;
+          delete e.tags;
+
+          // Stress screen fields
+          delete e.stressTab;
+          delete e.rant;
+          delete e.dump;
+
+          await Store.putEntry({ ...e, date: iso });
+        }
+
+        UI.toast('This week cleared.');
+        TrackboardRouter.go('goals');
+      });
+
         if(!ok) return;
         delete weekRec.goodEnough;
         delete weekRec.startedAt;
