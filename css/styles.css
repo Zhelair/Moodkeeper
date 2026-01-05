@@ -386,7 +386,3 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 /* Bottom nav: allow more tabs */
 .bottomnav{ overflow-x:auto; justify-content:flex-start; gap:8px; padding: 0 10px; }
 .navbtn{ flex:0 0 auto; min-width: 88px; }
-
-
-/* Dark theme: modal overlay slightly stronger for readability */
-body.theme-dark .modal{ background: rgba(0,0,0,.55); }
