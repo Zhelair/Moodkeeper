@@ -19,7 +19,7 @@
     const d0 = new Date(weekStartISO+"T00:00:00");
     const d1 = new Date(d0); d1.setDate(d1.getDate()+6);
     const opts = { month: "short", day: "numeric" };
-    return `${d0.toLocaleDateString('en-US', opts)} – ${d1.toLocaleDateString('en-US', opts)}`;
+    return `${d0.toLocaleDateString(undefined, opts)} – ${d1.toLocaleDateString(undefined, opts)}`;
   }
 
   function summarizeWeek(entries){

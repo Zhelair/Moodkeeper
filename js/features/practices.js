@@ -43,7 +43,7 @@
   }
   function fmtDow(iso){
     const d = new Date(iso+"T00:00:00");
-    return d.toLocaleDateString('en-US',{weekday:'short'});
+    return d.toLocaleDateString(undefined,{weekday:'short'});
   }
 
   function confettiMini(root){
