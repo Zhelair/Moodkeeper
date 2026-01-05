@@ -1,6 +1,6 @@
 {
-  "name": "Trackboard",
-  "short_name": "Trackboard",
+  "name": "Moodkeeper",
+  "short_name": "Moodkeeper",
   "start_url": "./#home",
   "display": "standalone",
   "background_color": "#0f0f10",

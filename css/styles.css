@@ -386,3 +386,42 @@ pre.code{ white-space:pre-wrap; font-size:12px; padding:12px; border-radius:12px
 /* Bottom nav: allow more tabs */
 .bottomnav{ overflow-x:auto; justify-content:flex-start; gap:8px; padding: 0 10px; }
 .navbtn{ flex:0 0 auto; min-width: 88px; }
+
+
+
+/* === Sprint 1: Dark theme visibility fixes (readability pass) === */
+.theme-dark .tabbtn{
+  background: var(--card2);
+  color: var(--text);
+  border-color: rgba(255,255,255,.14);
+}
+.theme-dark .tabbtn.active{
+  background: var(--card);
+  border-color: rgba(255,255,255,.22);
+  box-shadow:none;
+}
+.theme-dark .toggle-row + .toggle-row,
+.theme-dark .practice-row + .practice-row{
+  border-top:1px solid var(--border);
+}
+.theme-dark .grid-card{
+  background: var(--card);
+  border-color: var(--border);
+}
+.theme-dark .count{
+  background: var(--card2);
+  color: var(--text);
+}
+.theme-dark .meter{
+  background: rgba(255,255,255,0.10);
+}
+.theme-dark .pill{
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  border-color: rgba(255,255,255,.14);
+}
+.theme-dark .pill.ghost{
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--border);
+}

@@ -1,6 +1,6 @@
-# Trackboard
+# Moodkeeper
 
-Trackboard is a local-first wellbeing notebook: mood, notes, calm tools, alcohol log, weekly goals, and lightweight insights.
+Moodkeeper is a local-first wellbeing notebook: mood, notes, calm tools, alcohol log, weekly goals, and lightweight insights.
 
 ## Privacy
 - No accounts, no servers.
