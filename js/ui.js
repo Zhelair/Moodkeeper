@@ -96,6 +96,8 @@
   }
 
   function resetActiveToToday(){
+    // Explicit helper for "go to today" actions.
+    // Keeps persistence aligned and triggers re-render via tb:activeDate.
     setActiveISO(todayISO());
   }
 
@@ -215,7 +217,13 @@
           onClick:(e)=>{
             e.preventDefault();
             e.stopPropagation();
+            // Some mobile browsers can be flaky with CustomEvent-based re-render.
+            // Force a refresh of the current route after resetting.
             resetActiveToToday();
+            try{
+              const cur = window.TrackboardRouter && TrackboardRouter.current && TrackboardRouter.current();
+              if(cur && TrackboardRouter.go) TrackboardRouter.go(cur);
+            }catch(_e){}
           }
         }, ['Go to Today'])
       ]);

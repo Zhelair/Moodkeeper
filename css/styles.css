@@ -128,6 +128,8 @@ body.theme-dark .topbar{
   font: inherit;
   cursor:pointer;
 }
+/* Ensure taps on inner spans register as button taps on mobile */
+.brand-subtitle .subdatebtn *{ pointer-events:none; }
 .brand-subtitle .subdatebtn:hover{ filter: brightness(0.985); }
 .brand-subtitle .subcal{ opacity:0.9; }
 .brand-subtitle .pastpill{
