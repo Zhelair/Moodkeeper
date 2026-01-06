@@ -427,11 +427,13 @@ function setActiveISO(iso){
 
 
 function setTalkVoice(v){
-  _talkVoice = (v === 'supportive' || v === 'clear') ? v : 'gentle';
+  // Accept legacy "clear" and new "direct"
+  _talkVoice = (v === 'supportive' || v === 'direct' || v === 'clear') ? v : 'gentle';
   try{ localStorage.setItem('mk_voice', _talkVoice); }catch(e){}
 }
 
 function getTalkVoiceLabel(v){
+  if(v === 'direct') return 'Direct';
   if(v === 'clear') return 'Clear';
   if(v === 'supportive') return 'Supportive';
   return 'Gentle';
@@ -500,6 +502,114 @@ function classifyPolarity(raw){
   return 'neutral';
 }
 
+// --- Sprint 7.2: Fun intents (Jokes + Puzzles) ---
+// Natural language triggers inside Talk input.
+// One-shot only: ask -> answer -> done. No loops, no dependency.
+
+let _talkMini = null; // { mode:'puzzle', q, a, alts?:[], askedAt }
+
+const _JOKES = [
+  "I tried mindfulness once. My brain filed a complaint.",
+  "Today’s win: I didn’t argue with an imaginary person. Progress.",
+  "I told myself I’d be productive. My couch said, “we’ll see.”",
+  "My mood swings have a schedule. Unfortunately, I don’t have the calendar.",
+  "I’m not procrastinating — I’m doing “delayed excellence.”",
+  "I cleaned for five minutes. My home is now 7% more heroic.",
+  "I wanted a sign from the universe. I got an unread notification instead.",
+  "My inner critic is loud. I’m considering noise-cancelling boundaries."
+];
+
+const _PUZZLES = [
+  { q:"Quick math: What’s 12 × 8?", a:"96" },
+  { q:"Logic: Which is heavier — 1 kg of feathers or 1 kg of iron?", a:"same", alts:["they are the same","equal","both","neither"] },
+  { q:"Pattern: What comes next? 2, 4, 8, 16, ?", a:"32" },
+  { q:"Riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", a:"echo" },
+  { q:"Quick math: If you have 3 apples and you take away 2, how many do you have?", a:"2", alts:["two"] },
+  { q:"Logic: A bat and a ball cost $1.10 total. The bat costs $1 more than the ball. How much is the ball?", a:"0.05", alts:["5 cents","$0.05","0.05 dollars","five cents"] },
+  { q:"Pattern: What comes next? A, C, F, J, O, ?", a:"u", alts:["U"] }, // increments: +2,+3,+4,+5,+6
+  { q:"Riddle: What has keys but can’t open locks?", a:"piano", alts:["a piano","keyboard"] },
+  { q:"Quick math: What’s 15% of 200?", a:"30" },
+  { q:"Logic: You’re running a race and you pass the person in 2nd place. What place are you in?", a:"second", alts:["2nd","2","second place"] },
+  { q:"Riddle: What gets wetter the more it dries?", a:"towel", alts:["a towel"] },
+  { q:"Pattern: What comes next? 1, 1, 2, 3, 5, 8, ?", a:"13" }
+];
+
+function _hashSeed(s){
+  s = String(s||'');
+  let h = 2166136261;
+  for(let i=0;i<s.length;i++){
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0);
+}
+
+function _pick(list, seed){
+  if(!list || !list.length) return null;
+  const idx = seed % list.length;
+  return list[idx];
+}
+
+function _cleanAns(s){
+  return String(s||'').trim().toLowerCase().replace(/[\s\t\n\r]+/g,' ').replace(/[“”"']/g,'').replace(/[.?!,:;]+/g,'').trim();
+}
+
+function detectFunIntent(raw){
+  const t = _cleanAns(raw);
+  if(!t) return null;
+
+  const has = (arr)=> arr.some(w=> t.includes(w));
+  const jokeKeys = ['joke','funny','make me laugh','cheer me up','tell me something funny','say something funny'];
+  const puzzleKeys = ['puzzle','riddle','brain teaser','teaser','game','math','logic','quiz','challenge'];
+
+  if(has(jokeKeys)) return 'joke';
+  if(has(puzzleKeys)) return 'puzzle';
+
+  // "surprise me" / "something fun" => default to joke
+  const funKeys = ['surprise me','something fun','entertain me','bored'];
+  if(has(funKeys)) return 'joke';
+
+  return null;
+}
+
+function _jokeReply(voice){
+  const v = _normVoice(voice);
+  const joke = _pick(_JOKES, _hashSeed(_talkDraft) + Date.now());
+  if(v === 'direct') return joke;
+  if(v === 'supportive') return joke + " 🙂";
+  return joke;
+}
+
+function _puzzleAsk(){
+  const seed = _hashSeed(_talkDraft) + Date.now();
+  const pz = _pick(_PUZZLES, seed);
+  _talkMini = { mode:'puzzle', q:pz.q, a:pz.a, alts:pz.alts||[], askedAt: Date.now() };
+  return pz.q + " (Reply with your answer.)";
+}
+
+function _puzzleCheck(answerRaw){
+  const ans = _cleanAns(answerRaw);
+  const target = _cleanAns(_talkMini?.a);
+  const alts = (_talkMini?.alts || []).map(_cleanAns);
+
+  const ok = ans === target || alts.includes(ans);
+
+  const v = _normVoice(_talkVoice);
+  const reveal = (typeof _talkMini?.a === 'string') ? String(_talkMini.a) : target;
+
+  _talkMini = null;
+
+  if(ok){
+    if(v === 'direct') return "Correct.";
+    if(v === 'supportive') return "Correct — nice one.";
+    return "Correct — nicely done.";
+  }else{
+    if(v === 'direct') return "Not quite. Answer: " + reveal + ".";
+    if(v === 'supportive') return "Close. The answer is " + reveal + ".";
+    return "Not quite — the answer is " + reveal + ".";
+  }
+}
+
 // --- existing functions BELOW ---
  
 function mockMirror(text){
@@ -554,6 +664,36 @@ function mockPerspective(text){
 function runMock(kind){
   const t = (_talkDraft||'').trim();
 
+  // If a puzzle is awaiting an answer, treat the next input as the answer.
+  if(_talkMini && _talkMini.mode === 'puzzle'){
+    if(!t){
+      const msg = "Type your answer in the box, then press the button again.";
+      _talkLast = { kind:'puzzle', text: msg, voice: _talkVoice, ts: Date.now() };
+      renderTalkReply();
+      return;
+    }
+    const out = _puzzleCheck(t);
+    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
+    renderTalkReply();
+    return;
+  }
+
+  // Natural language fun intents (jokes / puzzles)
+  const intent = detectFunIntent(t);
+  if(intent === 'joke'){
+    const out = _jokeReply(_talkVoice);
+    _talkLast = { kind:'joke', text: out, voice: _talkVoice, ts: Date.now() };
+    renderTalkReply();
+    return;
+  }
+  if(intent === 'puzzle'){
+    const out = _puzzleAsk();
+    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
+    renderTalkReply();
+    return;
+  }
+
+  // Existing behavior: Mirror / Perspective
   if(!t || t.length < 4){
     const msg = (kind === 'mirror')
       ? 'There isn’t enough here for me to mirror yet.'
