@@ -464,50 +464,97 @@ function classifyTone(raw){
   return 'unclear';
 }
 
+// --- Sprint 7.1 helpers (NEW) ---
+function _normVoice(v){
+  if(!v) return 'gentle';
+  if(v === 'clear') return 'direct';
+  return v;
+}
+
+function classifyPolarity(raw){
+  const t = (raw || '').toLowerCase();
+  if(!t.trim()) return 'neutral';
+
+  const POS = [
+    'good','great','ok','okay','fine','better','calm','relieved','happy','glad','proud','excited',
+    'grateful','thankful','content','peace','peaceful','nice','awesome','amazing','love','loved',
+    'positive','energized','motivated'
+  ];
+  const NEG = [
+    'bad','sad','down','depressed','anxious','anxiety','panic','stressed','stress','overwhelmed',
+    'tired','exhausted','angry','mad','furious','irritated','lonely','hopeless','burnt','burned',
+    'scared','afraid','worried','worry','nervous','upset','pain'
+  ];
+
+  const hasAny = (arr) => arr.some(w => t.includes(w));
+  const hasPos = hasAny(POS);
+  const hasNeg = hasAny(NEG);
+
+  const hasMixedCue =
+    t.includes(' but ') || t.includes(' though ') || t.includes(' however ') ||
+    t.includes(' still ') || t.includes(' yet ');
+
+  if((hasPos && hasNeg) || (hasMixedCue && (hasPos || hasNeg))) return 'mixed';
+  if(hasPos && !hasNeg) return 'positive';
+  if(hasNeg && !hasPos) return 'negative';
+  return 'neutral';
+}
+
+// --- existing functions BELOW ---
+ 
 function mockMirror(text){
-  const tone = classifyTone(text);
-  if(_talkVoice === 'direct'){
-    if(tone === 'tired') return 'You sound tired. The message feels low-energy and worn down.';
-    if(tone === 'overwhelmed') return 'You sound overwhelmed. There are too many moving parts at once.';
-    if(tone === 'anxiety') return 'You sound anxious. There’s a sense of uncertainty and tension.';
-    if(tone === 'anger') return 'You sound angry. The frustration comes through clearly.';
-    if(tone === 'sadness') return 'You sound down. The tone feels heavy and discouraged.';
-    if(tone === 'flat') return 'You sound flat. Not much emotion is coming through.';
-    return 'This reads as mixed and a bit tense. There may be more here than you want to name right now.';
+
+ const v = _normVoice(_talkVoice);
+  const p = classifyPolarity(text);
+
+  if(v === 'direct'){
+    if(p === 'positive') return 'You’re feeling good. That’s the main signal here.';
+    if(p === 'neutral')  return 'This reads as factual/neutral — not much emotion attached.';
+    if(p === 'mixed')    return 'This reads as mixed: some good, some strain.';
+    return 'This reads as difficult — stress or heaviness is present.';
   }
-  if(_talkVoice === 'supportive'){
-    if(tone === 'tired') return 'This sounds like you’re running on fumes. Even naming it is a form of honesty.';
-    if(tone === 'overwhelmed') return 'It sounds like a lot is pressing at once. You don’t have to hold it perfectly.';
-    if(tone === 'anxiety') return 'There’s worry here — like your mind is scanning for what could go wrong. That’s exhausting.';
-    if(tone === 'anger') return 'I hear a real edge of frustration here. Something feels unfair or too much.';
-    if(tone === 'sadness') return 'This feels heavy. You’re carrying more than you want to admit.';
-    if(tone === 'flat') return 'This feels numb and distant — like you’re watching things from behind glass.';
-    return 'I’m hearing tension and a need for space. You may be closer to your truth than it feels.';
+
+  if(v === 'supportive'){
+    if(p === 'positive') return 'This reads as genuinely good — lighter, more settled.';
+    if(p === 'neutral')  return 'This feels neutral — just reporting what happened.';
+    if(p === 'mixed')    return 'This reads as both okay and strained at the same time.';
+    return 'This feels heavy. You’re carrying something real here.';
   }
-  // gentle (default)
-  if(tone === 'tired') return 'It sounds like you’re tired — maybe more than you’ve had time to notice.';
-  if(tone === 'overwhelmed') return 'It sounds like things are piling up and you’re trying to stay afloat.';
-  if(tone === 'anxiety') return 'There’s a worried edge here, like your body is bracing for something.';
-  if(tone === 'anger') return 'There’s frustration here — sharp, but understandable.';
-  if(tone === 'sadness') return 'This feels heavy, like you’re moving through a thicker kind of day.';
-  if(tone === 'flat') return 'This feels muted and “meh” — not bad, not good, just distant.';
-  return 'This feels mixed — a bit tense, a bit tired. You may not need to name it perfectly.';
+
+  if(p === 'positive') return 'This reads as good — a lighter kind of day.';
+  if(p === 'neutral')  return 'This feels mostly neutral — just what happened, as it is.';
+  if(p === 'mixed')    return 'This reads as mixed — some relief, and some tension underneath.';
+  return 'This feels heavy — like your system is having a hard day.';
 }
 
 function mockPerspective(text){
-  if(_talkVoice === 'direct'){
-    return 'You don’t need to solve this right now. One small, neutral next step is enough for today.';
+  const v = _normVoice(_talkVoice);
+  const p = classifyPolarity(text);
+
+  if(v === 'direct'){
+    if(p === 'positive') return 'Keep it simple: note what helped so you can repeat it.';
+    if(p === 'neutral')  return 'No action required. One small reset (water/stretch) is enough.';
+    if(p === 'mixed')    return 'Pick one stabilizer: food, water, or a 5-minute pause.';
+    return 'Reduce load. Do one small step, then stop.';
   }
-  if(_talkVoice === 'supportive'){
-    return 'You don’t have to fix yourself in this moment. If all you do is soften the pace a little, that’s already something.';
+
+  if(v === 'supportive'){
+    if(p === 'positive') return 'Nice. If you want, name one thing that helped — small wins matter.';
+    if(p === 'neutral')  return 'You don’t have to force meaning here. A small reset is plenty.';
+    if(p === 'mixed')    return 'Both can be true. If you want, take one small stabilizing step and breathe.';
+    return 'You don’t have to fix everything today. One small, kind step is enough.';
   }
-  return 'You don’t need to resolve this here. It’s okay to take one small, quiet step — or simply pause.';
+
+  if(p === 'positive') return 'That’s good to hear. If you want, gently notice what made today easier.';
+  if(p === 'neutral')  return 'It’s okay for a day to be neutral. A small pause can be enough.';
+  if(p === 'mixed')    return 'Both sides can exist at once. If you want, take one small steadying step.';
+  return 'You don’t need to solve this right now. A small pause or one gentle step is enough.';
 }
 
 function runMock(kind){
   const t = (_talkDraft||'').trim();
-  // Fallbacks: no data / too little text
-  if(!t){
+
+  if(!t || t.length < 4){
     const msg = (kind === 'mirror')
       ? 'There isn’t enough here for me to mirror yet.'
       : 'There isn’t much here to reflect on yet. That’s okay.';
@@ -515,19 +562,11 @@ function runMock(kind){
     renderTalkReply();
     return;
   }
-  if(t.length < 4){
-    const msg = (kind === 'mirror')
-      ? 'There isn’t enough here for me to mirror yet.'
-      : 'There isn’t much here to reflect on yet. That’s okay.';
-    _talkLast = { kind, text: msg, voice: _talkVoice, ts: Date.now() };
-    renderTalkReply();
-    return;
-  }
+
   const out = (kind === 'mirror') ? mockMirror(t) : mockPerspective(t);
   _talkLast = { kind, text: out, voice: _talkVoice, ts: Date.now() };
   renderTalkReply();
 }
-
   async function runWeeklyInsight(){
     try{
       if(!window.Store){
