@@ -894,9 +894,6 @@ h('div', { class:'talkmeta' }, [
     const drawer = ensureTalkDrawer();
     drawer.classList.add('open');
     drawer.setAttribute('aria-hidden','false');
-    try{ if(typeof bumpCompanionActivity==='function') bumpCompanionActivity(); }catch(e){}
-    // While open, no idle glow.
-    setCompanionIdle(false);
     // Focus textarea for quick entry
     try{ setTimeout(()=>{ _talkTextEl && _talkTextEl.focus(); }, 60); }catch(e){}
   }
@@ -905,9 +902,6 @@ h('div', { class:'talkmeta' }, [
     if(!_talkDrawer) return;
     _talkDrawer.classList.remove('open');
     _talkDrawer.setAttribute('aria-hidden','true');
-    try{ if(typeof bumpCompanionActivity==='function') bumpCompanionActivity(); }catch(e){}
-    // When closed, let the glow return after idle.
-    scheduleCompanionIdle();
   }
 
   function destroyCompanion(){
@@ -953,28 +947,6 @@ h('div', { class:'talkmeta' }, [
     `;
   }
 
-  // --- Flower idle glow (Sprint 8.5 visuals) ---
-  let _idleTimer = null;
-  function setCompanionIdle(on){
-    if(!_companionBtn) return;
-    _companionBtn.classList.toggle('idle', !!on);
-  }
-  function scheduleCompanionIdle(){
-    if(_idleTimer){ window.clearTimeout(_idleTimer); _idleTimer = null; }
-    // If the drawer is open, no idle glow.
-    if(_talkDrawer && _talkDrawer.classList.contains('open')){
-      setCompanionIdle(false);
-      return;
-    }
-    // Turn glow on only after a short idle pause.
-    _idleTimer = window.setTimeout(()=> setCompanionIdle(true), 2200);
-  }
-  function bumpCompanionActivity(){
-    setCompanionIdle(false);
-    scheduleCompanionIdle();
-  }
-
-
   function initCompanion(){
     if(_companionBtn) return;
     const btn = h('button', {
@@ -992,19 +964,240 @@ h('div', { class:'talkmeta' }, [
     document.body.appendChild(btn);
     _companionBtn = btn;
 
-    // Idle glow: visible only when you haven't interacted for a moment.
-    bumpCompanionActivity();
-
-    // Any interaction disables the glow, then it slowly returns.
-    const _mkBump = ()=> bumpCompanionActivity();
-    document.addEventListener('pointerdown', _mkBump, { passive:true });
-    document.addEventListener('keydown', _mkBump, { passive:true });
-    document.addEventListener('scroll', _mkBump, { passive:true });
-
     // Close on Escape
     window.addEventListener('keydown', (ev)=>{
       if(ev.key === 'Escape') closeTalkPanel();
     });
+  }
+
+  // --- To‑Do (Sprint 9) ---
+  // Local-only, timeless list: no dates, no reminders, no AI access.
+  const TODO_KEY = 'mk_todos_v1';
+  let _todoBtn = null;
+  let _todoDrawer = null;
+  let _todoInputEl = null;
+  let _todos = null; // lazy loaded
+
+  function _safeParse(json, fallback){
+    try{ return JSON.parse(json); }catch(e){ return fallback; }
+  }
+
+  function loadTodos(){
+    if(Array.isArray(_todos)) return _todos;
+    try{
+      const raw = localStorage.getItem(TODO_KEY);
+      const arr = _safeParse(raw || '[]', []);
+      _todos = Array.isArray(arr) ? arr : [];
+    }catch(e){
+      _todos = [];
+    }
+    // Normalize
+    _todos = _todos
+      .filter(x=>x && typeof x === 'object')
+      .map(x=>({
+        id: String(x.id || (Date.now() + Math.random()).toString(36)),
+        text: String(x.text || '').trim(),
+        done: !!x.done,
+        ts: typeof x.ts === 'number' ? x.ts : Date.now(),
+        at: (x.at ? String(x.at).trim() : '')
+      }))
+      .filter(x=>x.text);
+    return _todos;
+  }
+
+  function saveTodos(){
+    try{ localStorage.setItem(TODO_KEY, JSON.stringify(loadTodos())); }catch(e){}
+    syncTodoIndicator();
+  }
+
+  function hasOpenTodos(){
+    return loadTodos().some(t=>!t.done);
+  }
+
+  function syncTodoIndicator(){
+    if(!_todoBtn) return;
+    if(hasOpenTodos()) _todoBtn.classList.add('has-open');
+    else _todoBtn.classList.remove('has-open');
+  }
+
+  function ensureTodoDrawer(){
+    if(_todoDrawer) return _todoDrawer;
+
+    const listEl = h('div', { class:'todolist' }, []);
+
+    function renderList(){
+      listEl.innerHTML = '';
+      const todos = loadTodos();
+
+      if(!todos.length){
+        listEl.appendChild(h('div', { class:'muted small', style:'padding:10px 2px;' }, [
+          'Nothing here yet. Add what\'s on your mind.'
+        ]));
+        return;
+      }
+
+      for(const item of todos){
+        const row = h('div', { class:'todoitem' }, []);
+        const cb = h('input', {
+          type:'checkbox',
+          class:'todocb',
+          checked: item.done ? 'checked' : null,
+          onChange: (e)=>{
+            item.done = !!e.target.checked;
+            saveTodos();
+            renderList();
+          }
+        }, []);
+
+        const textWrap = h('div', { class:'todotextwrap' }, []);
+        const text = h('div', { class:'todotext' + (item.done ? ' done' : '') }, [item.text]);
+        const meta = item.at ? h('div', { class:'todoat muted' }, [item.at]) : null;
+        textWrap.appendChild(text);
+        if(meta) textWrap.appendChild(meta);
+
+        const actions = h('div', { class:'todoactions' }, []);
+        const editBtn = h('button', {
+          type:'button',
+          class:'icon-btn todoicon',
+          title:'Edit',
+          'aria-label':'Edit',
+          onClick: ()=>{
+            // Tiny, low-pressure inline editor
+            const input = h('input', { class:'input todoinput', value:item.text }, []);
+            const atIn = h('input', { class:'input todoinput', value:(item.at||''), placeholder:'Optional time (e.g., 16:00)' }, []);
+            const saveBtn = h('button', { class:'btn primary', type:'button' }, ['Save']);
+            const cancelBtn = h('button', { class:'btn', type:'button' }, ['Cancel']);
+
+            const box = h('div', { class:'todoedit' }, [
+              h('div', { class:'muted small', style:'margin-bottom:6px' }, ['Edit task']),
+              input,
+              atIn,
+              h('div', { class:'row', style:'gap:10px; margin-top:10px' }, [cancelBtn, saveBtn])
+            ]);
+
+            row.replaceWith(box);
+            setTimeout(()=>{ try{ input.focus(); input.select(); }catch(e){} }, 20);
+
+            cancelBtn.onclick = ()=>{ renderList(); };
+            saveBtn.onclick = ()=>{
+              const t = String(input.value||'').trim();
+              const at = String(atIn.value||'').trim();
+              if(!t){
+                // Empty = delete silently
+                _todos = loadTodos().filter(x=>x.id !== item.id);
+              }else{
+                item.text = t;
+                item.at = at;
+              }
+              saveTodos();
+              renderList();
+            };
+          }
+        }, ['✎']);
+
+        const delBtn = h('button', {
+          type:'button',
+          class:'icon-btn todoicon',
+          title:'Delete',
+          'aria-label':'Delete',
+          onClick: ()=>{
+            _todos = loadTodos().filter(x=>x.id !== item.id);
+            saveTodos();
+            renderList();
+          }
+        }, ['🗑']);
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        row.appendChild(cb);
+        row.appendChild(textWrap);
+        row.appendChild(actions);
+        listEl.appendChild(row);
+      }
+    }
+
+    const drawer = h('div', { class:'tododrawer', 'aria-hidden':'true' }, []);
+    const inner = h('div', { class:'talkdrawer-inner' }, [
+      h('div', { class:'talkdrawer-head' }, [
+        h('div', { class:'talkdrawer-title' }, ['To‑Do']),
+        h('button', {
+          class:'icon-btn talkdrawer-close',
+          type:'button',
+          'aria-label':'Close',
+          title:'Close',
+          onClick: ()=> closeTodoPanel()
+        }, ['✕'])
+      ]),
+      h('div', { class:'talkdrawer-body' }, [
+        listEl,
+        h('div', { class:'todoadder' }, [
+          (_todoInputEl = h('input', {
+            class:'input',
+            type:'text',
+            placeholder:'Add a task…',
+            onKeydown:(e)=>{
+              if(e.key === 'Enter'){
+                e.preventDefault();
+                addTodoFromInput();
+              }
+            }
+          }, [])),
+          h('button', { class:'btn primary', type:'button', onClick: ()=> addTodoFromInput() }, ['Add'])
+        ])
+      ])
+    ]);
+    drawer.appendChild(inner);
+    document.body.appendChild(drawer);
+    _todoDrawer = drawer;
+
+    function addTodoFromInput(){
+      const text = String(_todoInputEl && _todoInputEl.value || '').trim();
+      if(!text) return;
+      const todos = loadTodos();
+      todos.unshift({ id: (Date.now() + Math.random()).toString(36), text, done:false, ts:Date.now(), at:'' });
+      _todoInputEl.value = '';
+      saveTodos();
+      renderList();
+    }
+
+    // Close on Escape
+    window.addEventListener('keydown', (ev)=>{ if(ev.key === 'Escape') closeTodoPanel(); });
+
+    // Initial render
+    renderList();
+    syncTodoIndicator();
+    return drawer;
+  }
+
+  function openTodoPanel(){
+    const d = ensureTodoDrawer();
+    d.classList.add('open');
+    d.setAttribute('aria-hidden','false');
+    try{ setTimeout(()=>{ _todoInputEl && _todoInputEl.focus(); }, 60); }catch(e){}
+  }
+
+  function closeTodoPanel(){
+    if(!_todoDrawer) return;
+    _todoDrawer.classList.remove('open');
+    _todoDrawer.setAttribute('aria-hidden','true');
+  }
+
+  function initTodo(){
+    if(_todoBtn) return;
+    const btn = h('button', {
+      class:'todo-fab',
+      type:'button',
+      title:'To‑Do',
+      'aria-label':'To‑Do',
+      onClick:(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        openTodoPanel();
+      }
+    }, ['✓']);
+    document.body.appendChild(btn);
+    _todoBtn = btn;
+    syncTodoIndicator();
   }
 
 window.TrackboardUI = {
@@ -1032,7 +1225,12 @@ window.TrackboardUI = {
     closeTalkPanel,
     setTalkVoice,
     destroyCompanion,
-    syncCompanionFromSettings
+    syncCompanionFromSettings,
+    // To‑Do
+    initTodo,
+    openTodoPanel,
+    closeTodoPanel,
+    syncTodoIndicator
   };
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };

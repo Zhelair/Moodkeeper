@@ -177,6 +177,10 @@ async function showCompanionIntro(){
     if(window.TrackboardUI){
       if(TrackboardUI.syncCompanionFromSettings) await TrackboardUI.syncCompanionFromSettings();
       else if(TrackboardUI.initCompanion) TrackboardUI.initCompanion();
+
+      // Sprint 9: To‑Do is local-only and always available
+      if(TrackboardUI.initTodo) TrackboardUI.initTodo();
+      if(TrackboardUI.syncTodoIndicator) TrackboardUI.syncTodoIndicator();
     }
 
     // If locked, go to unlock
