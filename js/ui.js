@@ -591,8 +591,8 @@ h('div', { class:'talkmeta' }, [
   function openTalkPanel(){
     const drawer = ensureTalkDrawer();
     drawer.classList.add('open');
-    try{ _companionBtn && _companionBtn.classList.add('open'); _companionBtn && _companionBtn.classList.remove('idle'); }catch(e){}
     drawer.setAttribute('aria-hidden','false');
+    if(_companionBtn) _companionBtn.classList.add('is-active');
     // Focus textarea for quick entry
     try{ setTimeout(()=>{ _talkTextEl && _talkTextEl.focus(); }, 60); }catch(e){}
   }
@@ -600,18 +600,43 @@ h('div', { class:'talkmeta' }, [
   function closeTalkPanel(){
     if(!_talkDrawer) return;
     _talkDrawer.classList.remove('open');
-    try{ _companionBtn && _companionBtn.classList.remove('open'); _companionBtn && _companionBtn.classList.add('idle'); }catch(e){}
     _talkDrawer.setAttribute('aria-hidden','true');
+    if(_companionBtn) _companionBtn.classList.remove('is-active');
   }
 
-  function buildFlowerNode(opts={}){
-    const theme = (document.body.classList.contains("theme-dark")?"dark":(document.body.classList.contains("theme-notebook")?"notebook":"morning"));
-    const online = !!opts.online;
-    const src = online ? "assets/flower_online.png" : (theme==="dark"?"assets/flower_dark.png":(theme==="notebook"?"assets/flower_notebook.png":"assets/flower_morning.png"));
-    const img = UI.h("img",{class:"companion-flower-img", alt:"Talk", src});
-    const glow = UI.h("span",{class:"companion-flower-glow", aria-hidden:true},[]);
-    return UI.h("div",{class:"companion-flower"},[img,glow]);
+  function getThemeKey(){
+    return document.body.classList.contains('theme-dark') ? 'dark'
+      : (document.body.classList.contains('theme-notebook') ? 'notebook' : 'morning');
   }
+
+  let _companionOnline = false;
+
+  function buildFlowerNode(){
+    const theme = getThemeKey();
+    // We intentionally keep the same flower image and use CSS to "hype" online mode.
+    // Assets: morning/notebook share the light flower; dark uses the dark flower.
+    const src = (theme === 'dark') ? 'assets/flower_mode_09.png' : 'assets/flower_mode_01.png';
+
+    const img = UI.h('img', { class:'companion-flower-img', alt:'Talk', src });
+    const glow = UI.h('span', { class:'companion-flower-glow', 'aria-hidden': 'true' }, []);
+    const wrap = UI.h('div', { class:'companion-flower', 'data-theme': theme }, [img, glow]);
+    return wrap;
+  }
+
+  function setCompanionOnline(flag){
+    _companionOnline = !!flag;
+    if(_companionBtn){
+      _companionBtn.classList.toggle('is-online', _companionOnline);
+    }
+  }
+
+  function refreshCompanionFlower(){
+    if(!_companionBtn) return;
+    _companionBtn.innerHTML = '';
+    _companionBtn.appendChild(buildFlowerNode());
+    _companionBtn.classList.toggle('is-online', _companionOnline);
+  }
+
 
   function initCompanion(){
     if(_companionBtn) return;
@@ -626,37 +651,21 @@ h('div', { class:'talkmeta' }, [
         openTalkPanel();
       }
     }, []);
-    // Flower icon (PNG + subtle glow)
-    btn.appendChild(buildFlowerNode({online:false}));
-    btn.classList.add('idle');
-    document.body.appendChild(btn);
+        btn.appendChild(buildFlowerNode());
+document.body.appendChild(btn);
     _companionBtn = btn;
+
+    // Keep flower in sync with theme changes
+    try{
+      const obs = new MutationObserver(()=>{ refreshCompanionFlower(); });
+      obs.observe(document.body, { attributes:true, attributeFilter:['class'] });
+    }catch(e){}
 
     // Close on Escape
     window.addEventListener('keydown', (ev)=>{
       if(ev.key === 'Escape') closeTalkPanel();
     });
   }
-
-
-
-  function setCompanionOnline(on){
-    if(!_companionBtn) return;
-    _companionBtn.classList.toggle('online', !!on);
-    // Rebuild flower node so it can swap assets if needed
-    const host = _companionBtn.querySelector('.companion-flower');
-    if(host){
-      host.innerHTML = '';
-      host.appendChild(buildFlowerNode({online:!!on}));
-    }
-  }
-
-  function refreshCompanionFlower(){
-    // Rebuild to pick up theme changes
-    const on = _companionBtn ? _companionBtn.classList.contains('online') : false;
-    setCompanionOnline(on);
-  }
-
 
 window.TrackboardUI = {
     toast,
@@ -676,10 +685,10 @@ window.TrackboardUI = {
     setActiveNav,
     openTimerModal,
     initCompanion,
-    openTalkPanel,
-    closeTalkPanel,
     setCompanionOnline,
-    refreshCompanionFlower
+    refreshCompanionFlower,
+    openTalkPanel,
+    closeTalkPanel
   };
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };
