@@ -90,12 +90,7 @@
     return _activeISO;
   }
 
-  
-
-  function getActiveISO(){
-    return activeISO();
-  }
-function setActiveISO(iso){
+  function setActiveISO(iso){
     if(!validISO(iso)) return;
     iso = clampISO(iso);
     if(iso === _activeISO) return;
@@ -427,13 +422,11 @@ function setActiveISO(iso){
 
 
 function setTalkVoice(v){
-  // Accept legacy "clear" and new "direct"
-  _talkVoice = (v === 'supportive' || v === 'direct' || v === 'clear') ? v : 'gentle';
+  _talkVoice = (v === 'supportive' || v === 'clear') ? v : 'gentle';
   try{ localStorage.setItem('mk_voice', _talkVoice); }catch(e){}
 }
 
 function getTalkVoiceLabel(v){
-  if(v === 'direct') return 'Direct';
   if(v === 'clear') return 'Clear';
   if(v === 'supportive') return 'Supportive';
   return 'Gentle';
@@ -447,7 +440,7 @@ function renderTalkReply(){
     return;
   }
   _talkReplyEl.style.display = '';
-  const kindLabel = _talkLast.kind === 'mirror' ? 'Mirror' : (_talkLast.kind === 'perspective' ? 'Gentle perspective' : (_talkLast.kind === 'weekly' ? 'Weekly insight' : 'Note'));
+  const kindLabel = _talkLast.kind === 'mirror' ? 'Mirror' : (_talkLast.kind === 'perspective' ? 'Gentle perspective' : 'Note');
   const voiceLabel = getTalkVoiceLabel(_talkLast.voice);
   _talkReplyEl.innerHTML = '';
   _talkReplyEl.appendChild(h('div', { class:'talkreply-meta muted' }, [kindLabel + ' · ' + voiceLabel]));
@@ -466,235 +459,50 @@ function classifyTone(raw){
   return 'unclear';
 }
 
-// --- Sprint 7.1 helpers (NEW) ---
-function _normVoice(v){
-  if(!v) return 'gentle';
-  if(v === 'clear') return 'direct';
-  return v;
-}
-
-function classifyPolarity(raw){
-  const t = (raw || '').toLowerCase();
-  if(!t.trim()) return 'neutral';
-
-  const POS = [
-    'good','great','ok','okay','fine','better','calm','relieved','happy','glad','proud','excited',
-    'grateful','thankful','content','peace','peaceful','nice','awesome','amazing','love','loved',
-    'positive','energized','motivated'
-  ];
-  const NEG = [
-    'bad','sad','down','depressed','anxious','anxiety','panic','stressed','stress','overwhelmed',
-    'tired','exhausted','angry','mad','furious','irritated','lonely','hopeless','burnt','burned',
-    'scared','afraid','worried','worry','nervous','upset','pain'
-  ];
-
-  const hasAny = (arr) => arr.some(w => t.includes(w));
-  const hasPos = hasAny(POS);
-  const hasNeg = hasAny(NEG);
-
-  const hasMixedCue =
-    t.includes(' but ') || t.includes(' though ') || t.includes(' however ') ||
-    t.includes(' still ') || t.includes(' yet ');
-
-  if((hasPos && hasNeg) || (hasMixedCue && (hasPos || hasNeg))) return 'mixed';
-  if(hasPos && !hasNeg) return 'positive';
-  if(hasNeg && !hasPos) return 'negative';
-  return 'neutral';
-}
-
-// --- Sprint 7.2: Fun intents (Jokes + Puzzles) ---
-// Natural language triggers inside Talk input.
-// One-shot only: ask -> answer -> done. No loops, no dependency.
-
-let _talkMini = null; // { mode:'puzzle', q, a, alts?:[], askedAt }
-
-const _JOKES = [
-  "I tried mindfulness once. My brain filed a complaint.",
-  "Today’s win: I didn’t argue with an imaginary person. Progress.",
-  "I told myself I’d be productive. My couch said, “we’ll see.”",
-  "My mood swings have a schedule. Unfortunately, I don’t have the calendar.",
-  "I’m not procrastinating — I’m doing “delayed excellence.”",
-  "I cleaned for five minutes. My home is now 7% more heroic.",
-  "I wanted a sign from the universe. I got an unread notification instead.",
-  "My inner critic is loud. I’m considering noise-cancelling boundaries."
-];
-
-const _PUZZLES = [
-  { q:"Quick math: What’s 12 × 8?", a:"96" },
-  { q:"Logic: Which is heavier — 1 kg of feathers or 1 kg of iron?", a:"same", alts:["they are the same","equal","both","neither"] },
-  { q:"Pattern: What comes next? 2, 4, 8, 16, ?", a:"32" },
-  { q:"Riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", a:"echo" },
-  { q:"Quick math: If you have 3 apples and you take away 2, how many do you have?", a:"2", alts:["two"] },
-  { q:"Logic: A bat and a ball cost $1.10 total. The bat costs $1 more than the ball. How much is the ball?", a:"0.05", alts:["5 cents","$0.05","0.05 dollars","five cents"] },
-  { q:"Pattern: What comes next? A, C, F, J, O, ?", a:"u", alts:["U"] }, // increments: +2,+3,+4,+5,+6
-  { q:"Riddle: What has keys but can’t open locks?", a:"piano", alts:["a piano","keyboard"] },
-  { q:"Quick math: What’s 15% of 200?", a:"30" },
-  { q:"Logic: You’re running a race and you pass the person in 2nd place. What place are you in?", a:"second", alts:["2nd","2","second place"] },
-  { q:"Riddle: What gets wetter the more it dries?", a:"towel", alts:["a towel"] },
-  { q:"Pattern: What comes next? 1, 1, 2, 3, 5, 8, ?", a:"13" }
-];
-
-function _hashSeed(s){
-  s = String(s||'');
-  let h = 2166136261;
-  for(let i=0;i<s.length;i++){
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0);
-}
-
-function _pick(list, seed){
-  if(!list || !list.length) return null;
-  const idx = seed % list.length;
-  return list[idx];
-}
-
-function _cleanAns(s){
-  return String(s||'').trim().toLowerCase().replace(/[\s\t\n\r]+/g,' ').replace(/[“”"']/g,'').replace(/[.?!,:;]+/g,'').trim();
-}
-
-function detectFunIntent(raw){
-  const t = _cleanAns(raw);
-  if(!t) return null;
-
-  const has = (arr)=> arr.some(w=> t.includes(w));
-  const jokeKeys = ['joke','funny','make me laugh','cheer me up','tell me something funny','say something funny'];
-  const puzzleKeys = ['puzzle','riddle','brain teaser','teaser','game','math','logic','quiz','challenge'];
-
-  if(has(jokeKeys)) return 'joke';
-  if(has(puzzleKeys)) return 'puzzle';
-
-  // "surprise me" / "something fun" => default to joke
-  const funKeys = ['surprise me','something fun','entertain me','bored'];
-  if(has(funKeys)) return 'joke';
-
-  return null;
-}
-
-function _jokeReply(voice){
-  const v = _normVoice(voice);
-  const joke = _pick(_JOKES, _hashSeed(_talkDraft) + Date.now());
-  if(v === 'direct') return joke;
-  if(v === 'supportive') return joke + " 🙂";
-  return joke;
-}
-
-function _puzzleAsk(){
-  const seed = _hashSeed(_talkDraft) + Date.now();
-  const pz = _pick(_PUZZLES, seed);
-  _talkMini = { mode:'puzzle', q:pz.q, a:pz.a, alts:pz.alts||[], askedAt: Date.now() };
-  return pz.q + " (Reply with your answer.)";
-}
-
-function _puzzleCheck(answerRaw){
-  const ans = _cleanAns(answerRaw);
-  const target = _cleanAns(_talkMini?.a);
-  const alts = (_talkMini?.alts || []).map(_cleanAns);
-
-  const ok = ans === target || alts.includes(ans);
-
-  const v = _normVoice(_talkVoice);
-  const reveal = (typeof _talkMini?.a === 'string') ? String(_talkMini.a) : target;
-
-  _talkMini = null;
-
-  if(ok){
-    if(v === 'direct') return "Correct.";
-    if(v === 'supportive') return "Correct — nice one.";
-    return "Correct — nicely done.";
-  }else{
-    if(v === 'direct') return "Not quite. Answer: " + reveal + ".";
-    if(v === 'supportive') return "Close. The answer is " + reveal + ".";
-    return "Not quite — the answer is " + reveal + ".";
-  }
-}
-
-// --- existing functions BELOW ---
- 
 function mockMirror(text){
-
- const v = _normVoice(_talkVoice);
-  const p = classifyPolarity(text);
-
-  if(v === 'direct'){
-    if(p === 'positive') return 'You’re feeling good. That’s the main signal here.';
-    if(p === 'neutral')  return 'This reads as factual/neutral — not much emotion attached.';
-    if(p === 'mixed')    return 'This reads as mixed: some good, some strain.';
-    return 'This reads as difficult — stress or heaviness is present.';
+  const tone = classifyTone(text);
+  if(_talkVoice === 'clear'){
+    if(tone === 'tired') return 'You sound tired. The message feels low-energy and worn down.';
+    if(tone === 'overwhelmed') return 'You sound overwhelmed. There are too many moving parts at once.';
+    if(tone === 'anxiety') return 'You sound anxious. There’s a sense of uncertainty and tension.';
+    if(tone === 'anger') return 'You sound angry. The frustration comes through clearly.';
+    if(tone === 'sadness') return 'You sound down. The tone feels heavy and discouraged.';
+    if(tone === 'flat') return 'You sound flat. Not much emotion is coming through.';
+    return 'This reads as mixed and a bit tense. There may be more here than you want to name right now.';
   }
-
-  if(v === 'supportive'){
-    if(p === 'positive') return 'This reads as genuinely good — lighter, more settled.';
-    if(p === 'neutral')  return 'This feels neutral — just reporting what happened.';
-    if(p === 'mixed')    return 'This reads as both okay and strained at the same time.';
-    return 'This feels heavy. You’re carrying something real here.';
+  if(_talkVoice === 'supportive'){
+    if(tone === 'tired') return 'This sounds like you’re running on fumes. Even naming it is a form of honesty.';
+    if(tone === 'overwhelmed') return 'It sounds like a lot is pressing at once. You don’t have to hold it perfectly.';
+    if(tone === 'anxiety') return 'There’s worry here — like your mind is scanning for what could go wrong. That’s exhausting.';
+    if(tone === 'anger') return 'I hear a real edge of frustration here. Something feels unfair or too much.';
+    if(tone === 'sadness') return 'This feels heavy. You’re carrying more than you want to admit.';
+    if(tone === 'flat') return 'This feels numb and distant — like you’re watching things from behind glass.';
+    return 'I’m hearing tension and a need for space. You may be closer to your truth than it feels.';
   }
-
-  if(p === 'positive') return 'This reads as good — a lighter kind of day.';
-  if(p === 'neutral')  return 'This feels mostly neutral — just what happened, as it is.';
-  if(p === 'mixed')    return 'This reads as mixed — some relief, and some tension underneath.';
-  return 'This feels heavy — like your system is having a hard day.';
+  // gentle (default)
+  if(tone === 'tired') return 'It sounds like you’re tired — maybe more than you’ve had time to notice.';
+  if(tone === 'overwhelmed') return 'It sounds like things are piling up and you’re trying to stay afloat.';
+  if(tone === 'anxiety') return 'There’s a worried edge here, like your body is bracing for something.';
+  if(tone === 'anger') return 'There’s frustration here — sharp, but understandable.';
+  if(tone === 'sadness') return 'This feels heavy, like you’re moving through a thicker kind of day.';
+  if(tone === 'flat') return 'This feels muted and “meh” — not bad, not good, just distant.';
+  return 'This feels mixed — a bit tense, a bit tired. You may not need to name it perfectly.';
 }
 
 function mockPerspective(text){
-  const v = _normVoice(_talkVoice);
-  const p = classifyPolarity(text);
-
-  if(v === 'direct'){
-    if(p === 'positive') return 'Keep it simple: note what helped so you can repeat it.';
-    if(p === 'neutral')  return 'No action required. One small reset (water/stretch) is enough.';
-    if(p === 'mixed')    return 'Pick one stabilizer: food, water, or a 5-minute pause.';
-    return 'Reduce load. Do one small step, then stop.';
+  if(_talkVoice === 'clear'){
+    return 'You don’t need to solve this right now. One small, neutral next step is enough for today.';
   }
-
-  if(v === 'supportive'){
-    if(p === 'positive') return 'Nice. If you want, name one thing that helped — small wins matter.';
-    if(p === 'neutral')  return 'You don’t have to force meaning here. A small reset is plenty.';
-    if(p === 'mixed')    return 'Both can be true. If you want, take one small stabilizing step and breathe.';
-    return 'You don’t have to fix everything today. One small, kind step is enough.';
+  if(_talkVoice === 'supportive'){
+    return 'You don’t have to fix yourself in this moment. If all you do is soften the pace a little, that’s already something.';
   }
-
-  if(p === 'positive') return 'That’s good to hear. If you want, gently notice what made today easier.';
-  if(p === 'neutral')  return 'It’s okay for a day to be neutral. A small pause can be enough.';
-  if(p === 'mixed')    return 'Both sides can exist at once. If you want, take one small steadying step.';
-  return 'You don’t need to solve this right now. A small pause or one gentle step is enough.';
+  return 'You don’t need to resolve this here. It’s okay to take one small, quiet step — or simply pause.';
 }
 
 function runMock(kind){
   const t = (_talkDraft||'').trim();
-
-  // If a puzzle is awaiting an answer, treat the next input as the answer.
-  if(_talkMini && _talkMini.mode === 'puzzle'){
-    if(!t){
-      const msg = "Type your answer in the box, then press the button again.";
-      _talkLast = { kind:'puzzle', text: msg, voice: _talkVoice, ts: Date.now() };
-      renderTalkReply();
-      return;
-    }
-    const out = _puzzleCheck(t);
-    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
-    renderTalkReply();
-    return;
-  }
-
-  // Natural language fun intents (jokes / puzzles)
-  const intent = detectFunIntent(t);
-  if(intent === 'joke'){
-    const out = _jokeReply(_talkVoice);
-    _talkLast = { kind:'joke', text: out, voice: _talkVoice, ts: Date.now() };
-    renderTalkReply();
-    return;
-  }
-  if(intent === 'puzzle'){
-    const out = _puzzleAsk();
-    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
-    renderTalkReply();
-    return;
-  }
-
-  // Existing behavior: Mirror / Perspective
-  if(!t || t.length < 4){
+  // Fallbacks: no data / too little text
+  if(!t){
     const msg = (kind === 'mirror')
       ? 'There isn’t enough here for me to mirror yet.'
       : 'There isn’t much here to reflect on yet. That’s okay.';
@@ -702,109 +510,18 @@ function runMock(kind){
     renderTalkReply();
     return;
   }
-
+  if(t.length < 4){
+    const msg = (kind === 'mirror')
+      ? 'There isn’t enough here for me to mirror yet.'
+      : 'There isn’t much here to reflect on yet. That’s okay.';
+    _talkLast = { kind, text: msg, voice: _talkVoice, ts: Date.now() };
+    renderTalkReply();
+    return;
+  }
   const out = (kind === 'mirror') ? mockMirror(t) : mockPerspective(t);
   _talkLast = { kind, text: out, voice: _talkVoice, ts: Date.now() };
   renderTalkReply();
 }
-  async function runWeeklyInsight(){
-    try{
-      if(!window.Store){
-        _talkLast = { kind:'weekly', text:'I can’t read your entries yet. Try again in a moment.', voice:_talkVoice, ts:Date.now() };
-        renderTalkReply();
-        return;
-      }
-      const iso = (typeof getActiveISO === 'function') ? getActiveISO() : (Store.todayKey ? Store.todayKey() : new Date().toISOString().slice(0,10));
-      const bounds = weekBounds(new Date(iso + 'T00:00:00'));
-      const weekStartISO = bounds.start.toISOString().slice(0,10);
-      const days = await Store.getEntriesForWeek(weekStartISO);
-
-      // Collect signals
-      let moodSum = 0, moodN = 0;
-      let poorSleepN = 0;
-      let alcoholHad = 0, alcoholFree = 0;
-      const tagCounts = Object.create(null);
-
-      for(const d of days){
-        if(!d) continue;
-        if(typeof d.mood === 'number'){
-          moodSum += d.mood;
-          moodN += 1;
-        }
-        if(d.poorSleep) poorSleepN += 1;
-
-        if(d.alcohol && typeof d.alcohol === 'object'){
-          if(d.alcohol.status === 'had') alcoholHad += 1;
-          if(d.alcohol.status === 'free') alcoholFree += 1;
-        }
-
-        if(Array.isArray(d.tags)){
-          for(const t of d.tags){
-            if(!t) continue;
-            tagCounts[t] = (tagCounts[t] || 0) + 1;
-          }
-        }
-      }
-
-      // Top tag
-      let topTag = null, topTagN = 0;
-      for(const [t,n] of Object.entries(tagCounts)){
-        if(n > topTagN){ topTag = t; topTagN = n; }
-      }
-
-      // Compose (2–4 short sentences, per our rules)
-      const lines = [];
-      const label = `Week of ${weekStartISO}`;
-      // Line 1: mood
-      if(moodN >= 2){
-        const avg = Math.round((moodSum / moodN) * 10) / 10;
-        lines.push(`${label}: average mood ${avg}/5 across ${moodN} check-ins.`);
-      }else if(moodN === 1){
-        lines.push(`${label}: you logged one mood check-in so far.`);
-      }else{
-        lines.push(`${label}: not enough check-ins yet to spot a pattern.`);
-      }
-
-      // Line 2: alcohol
-      if((alcoholHad + alcoholFree) > 0){
-        const parts = [];
-        if(alcoholFree) parts.push(`${alcoholFree} alcohol-free`);
-        if(alcoholHad) parts.push(`${alcoholHad} with alcohol`);
-        lines.push(`Alcohol: ${parts.join(', ')} day${(alcoholHad+alcoholFree)===1?'':'s'}.`);
-      }
-
-      // Line 3: sleep
-      if(poorSleepN > 0){
-        lines.push(`Poor sleep was flagged on ${poorSleepN} day${poorSleepN===1?'':'s'}.`);
-      }
-
-      // Line 4: tags
-      if(topTag && topTagN >= 2){
-        lines.push(`Most common theme: “${topTag}” (${topTagN} times).`);
-      }
-
-      // Voice tweak: Direct removes softener
-      let text = lines.slice(0,4).join(' ');
-      if(_talkVoice === 'gentle' && moodN === 0){
-        text = text + ' If you want, log a quick check-in — even one word is enough.';
-      }
-      if(_talkVoice === 'supportive' && moodN >= 2){
-        text = text + ' If you want, pick one small action for tomorrow.';
-      }
-      if(_talkVoice === 'direct' && moodN >= 2){
-        // keep it tight, no extra sentence
-        text = lines.slice(0,4).join(' ');
-      }
-
-      _talkLast = { kind:'weekly', text, voice:_talkVoice, ts:Date.now() };
-      renderTalkReply();
-    }catch(err){
-      console.error(err);
-      _talkLast = { kind:'weekly', text:'I couldn’t build a weekly insight right now. Try again.', voice:_talkVoice, ts:Date.now() };
-      renderTalkReply();
-    }
-  }
-
   function ensureTalkDrawer(){
     if(_talkDrawer) return _talkDrawer;
 
@@ -827,7 +544,7 @@ h('div', { class:'talkmeta' }, [
   h('select', { id:'talk-voice', class:'talkmeta-select', onChange:(e)=>{ setTalkVoice(e.target.value); toast('Voice: ' + getTalkVoiceLabel(_talkVoice)); if(_talkLast){ _talkLast.voice=_talkVoice; renderTalkReply(); } } }, [
     h('option', { value:'gentle' }, ['Gentle']),
     h('option', { value:'supportive' }, ['Supportive']),
-    h('option', { value:'direct' }, ['Direct'])
+    h('option', { value:'clear' }, ['Clear'])
   ])
 ]),
 (_talkReplyEl = h('div', { class:'talkreply', style:'display:none' }, [])),
@@ -838,39 +555,20 @@ h('div', { class:'talkmeta' }, [
           onInput:(e)=>{ _talkDraft = e.target.value; }
         }, [])),
         h('div', { class:'talkactions' }, [
-          h('button', { class:'btn full', type:'button', onClick:async ()=>{
+          h('button', { class:'btn full', type:'button', onClick:()=>{
             const t = (_talkDraft||'').trim();
             if(!t){ toast('Nothing to save.'); return; }
-
-            let saved = false;
-            try{
-              const cb = _talkDrawer && _talkDrawer.querySelector('#talk-save');
-              const doSave = cb && cb.checked;
-              if(doSave && window.Store){
-                const key = (window.TrackboardUI && TrackboardUI.activeISO) ? TrackboardUI.activeISO() : Store.todayKey();
-                const existing = await Store.getEntry(key) || { date: key };
-                if(!existing.talk) existing.talk = [];
-                existing.talk.push({ ts: Date.now(), text: t });
-                await Store.putEntry(existing);
-                saved = true;
-              }
-            }catch(e){ saved = false; }
-
+            // Default: notes are not stored. This is a deliberate “write and let go” action.
             _talkDraft = '';
             if(_talkTextEl) _talkTextEl.value = '';
-            // Reset checkbox for next message
-            try{ const cb2 = _talkDrawer && _talkDrawer.querySelector('#talk-save'); if(cb2) cb2.checked = false; }catch(e){}
-            toast(saved ? 'Saved.' : 'Done.');
+            toast('Done.');
           }}, ['Just write']),
           h('button', { class:'btn ghost full', type:'button', onClick:()=>{
             runMock('mirror');
           }}, ['Mirror this']),
           h('button', { class:'btn ghost full', type:'button', onClick:()=>{
             runMock('perspective');
-          }}, ['Gentle perspective']),
-          h('button', { class:'btn ghost full', type:'button', onClick:()=>{
-            runWeeklyInsight();
-          }}, ['What did you notice this week?'])
+          }}, ['Gentle perspective'])
         ]),
         h('div', { class:'talkfoot muted' }, [
           'No auto-save. Close anytime.'
@@ -893,6 +591,7 @@ h('div', { class:'talkmeta' }, [
   function openTalkPanel(){
     const drawer = ensureTalkDrawer();
     drawer.classList.add('open');
+    try{ _companionBtn && _companionBtn.classList.add('open'); _companionBtn && _companionBtn.classList.remove('idle'); }catch(e){}
     drawer.setAttribute('aria-hidden','false');
     // Focus textarea for quick entry
     try{ setTimeout(()=>{ _talkTextEl && _talkTextEl.focus(); }, 60); }catch(e){}
@@ -901,50 +600,17 @@ h('div', { class:'talkmeta' }, [
   function closeTalkPanel(){
     if(!_talkDrawer) return;
     _talkDrawer.classList.remove('open');
+    try{ _companionBtn && _companionBtn.classList.remove('open'); _companionBtn && _companionBtn.classList.add('idle'); }catch(e){}
     _talkDrawer.setAttribute('aria-hidden','true');
   }
 
-  function destroyCompanion(){
-    try{ if(_talkDrawer){ _talkDrawer.remove(); } }catch(e){}
-    try{ if(_companionBtn){ _companionBtn.remove(); } }catch(e){}
-    _talkDrawer = null;
-    _talkTextEl = null;
-    _talkReplyEl = null;
-    _companionBtn = null;
-  }
-
-  async function syncCompanionFromSettings(){
-    // This must be called after Store is available (app boot).
-    if(!window.Store) return;
-    const enabled = await Store.getSetting('companion_enabled');
-    if(enabled){
-      if(!_companionBtn) initCompanion();
-    }else{
-      // Hide everywhere when disabled
-      if(_companionBtn || _talkDrawer) destroyCompanion();
-    }
-    const voice = await Store.getSetting('companion_voice');
-    if(voice){ setTalkVoice(voice); }
-  }
-
-
-  function buildFlowerSVG(){
-    // Abstract, non-animal flower: no face, no eyes, no emotional cues.
-    return `
-      <svg class="companion-flower" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-        <g fill="currentColor" opacity="0.18">
-          <circle cx="32" cy="10" r="7"/>
-          <circle cx="48" cy="16" r="7"/>
-          <circle cx="54" cy="32" r="7"/>
-          <circle cx="48" cy="48" r="7"/>
-          <circle cx="32" cy="54" r="7"/>
-          <circle cx="16" cy="48" r="7"/>
-          <circle cx="10" cy="32" r="7"/>
-          <circle cx="16" cy="16" r="7"/>
-        </g>
-        <circle cx="32" cy="32" r="10" fill="currentColor" opacity="0.12"/>
-      </svg>
-    `;
+  function buildFlowerNode(opts={}){
+    const theme = (document.body.classList.contains("theme-dark")?"dark":(document.body.classList.contains("theme-notebook")?"notebook":"morning"));
+    const online = !!opts.online;
+    const src = online ? "assets/flower_online.png" : (theme==="dark"?"assets/flower_dark.png":(theme==="notebook"?"assets/flower_notebook.png":"assets/flower_morning.png"));
+    const img = UI.h("img",{class:"companion-flower-img", alt:"Talk", src});
+    const glow = UI.h("span",{class:"companion-flower-glow", aria-hidden:true},[]);
+    return UI.h("div",{class:"companion-flower"},[img,glow]);
   }
 
   function initCompanion(){
@@ -960,7 +626,9 @@ h('div', { class:'talkmeta' }, [
         openTalkPanel();
       }
     }, []);
-    btn.innerHTML = buildFlowerSVG();
+    // Flower icon (PNG + subtle glow)
+    btn.appendChild(buildFlowerNode({online:false}));
+    btn.classList.add('idle');
     document.body.appendChild(btn);
     _companionBtn = btn;
 
@@ -970,16 +638,34 @@ h('div', { class:'talkmeta' }, [
     });
   }
 
+
+
+  function setCompanionOnline(on){
+    if(!_companionBtn) return;
+    _companionBtn.classList.toggle('online', !!on);
+    // Rebuild flower node so it can swap assets if needed
+    const host = _companionBtn.querySelector('.companion-flower');
+    if(host){
+      host.innerHTML = '';
+      host.appendChild(buildFlowerNode({online:!!on}));
+    }
+  }
+
+  function refreshCompanionFlower(){
+    // Rebuild to pick up theme changes
+    const on = _companionBtn ? _companionBtn.classList.contains('online') : false;
+    setCompanionOnline(on);
+  }
+
+
 window.TrackboardUI = {
     toast,
     h,
     fmtDate,
     weekBounds,
     inRange,
-    openCalmSpace,
-    // Active day helpers
+    todayISO,
     activeISO,
-    getActiveISO,
     setActiveISO,
     resetActiveToToday,
     activeIsPast,
@@ -989,13 +675,11 @@ window.TrackboardUI = {
     setSubtitle,
     setActiveNav,
     openTimerModal,
-    // Companion
     initCompanion,
     openTalkPanel,
     closeTalkPanel,
-    setTalkVoice,
-    destroyCompanion,
-    syncCompanionFromSettings
+    setCompanionOnline,
+    refreshCompanionFlower
   };
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };

@@ -574,5 +574,50 @@ body.theme-dark .companion-flower{ color: rgba(255,255,255,.58); }
 .talkreply-text{ white-space:pre-wrap; line-height:1.35; }
 
 
-.talksave-row{ display:flex; align-items:center; gap:10px; margin-top:10px; }
-.talksave-row input{ width:16px; height:16px; }
+/* --- Flower FAB (Sprint 8.5) --- */
+.companion-fab{
+  overflow: hidden;
+}
+.companion-flower-img{
+  width: 30px;
+  height: 30px;
+  display: block;
+  /* subtle depth */
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.12));
+  animation: flowerPulse 12s ease-in-out infinite;
+}
+body.theme-dark .companion-flower-img{
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.35));
+}
+@keyframes flowerPulse{
+  0%,100%{ transform: translateY(0) scale(1); }
+  50%{ transform: translateY(-2px) scale(1.05); }
+}
+
+/* Soft inner glow, only when idle */
+.companion-fab.idle::after{
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 45%, rgba(39,174,96,.18), transparent 62%);
+  opacity: .55;
+  pointer-events: none;
+  animation: glowPulse 12s ease-in-out infinite;
+}
+body.theme-dark .companion-fab.idle::after{
+  background: radial-gradient(circle at 50% 45%, rgba(120,140,255,.18), transparent 62%);
+  opacity: .50;
+}
+@keyframes glowPulse{
+  0%,100%{ transform: scale(1); opacity: .38; }
+  50%{ transform: scale(1.08); opacity: .62; }
+}
+
+/* Slight extra “hype” when online AI is enabled */
+.companion-fab.online .companion-flower-img{ animation-duration: 7s; }
+.companion-fab.online.idle::after{ animation-duration: 7s; opacity: .62; }
+
+/* When drawer open, stop pulsing/glow */
+.companion-fab.open .companion-flower-img{ animation: none; }
+.companion-fab.open::after{ display:none; }
