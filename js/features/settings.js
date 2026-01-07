@@ -192,3 +192,87 @@
     });
   });
 })();
+// --- Companion (optional) ---
+const compEnabled = (localStorage.getItem('mk_companion_enabled')||'false')==='true';
+const compOnline = (localStorage.getItem('mk_companion_online')||'false')==='true';
+const compVoice = (localStorage.getItem('mk_voice')||'gentle');
+
+const chkComp = UI.h('input',{type:'checkbox',checked:compEnabled});
+chkComp.onchange = ()=>{
+  localStorage.setItem('mk_companion_enabled', chkComp.checked ? 'true' : 'false');
+  if(!chkComp.checked){
+    localStorage.setItem('mk_companion_online','false');
+    if(window.TrackboardUI && TrackboardUI.setCompanionOnline) TrackboardUI.setCompanionOnline(false);
+  }
+  UI.toast(chkComp.checked ? 'Companion enabled.' : 'Companion disabled.');
+};
+
+const selVoice = UI.h('select',{},[
+  UI.h('option',{value:'gentle',selected:compVoice==='gentle'},['Gentle']),
+  UI.h('option',{value:'clear',selected:compVoice==='clear'},['Clear'])
+]);
+selVoice.onchange = ()=>{
+  localStorage.setItem('mk_voice', selVoice.value);
+  UI.toast('Voice updated.');
+};
+
+const btnEnableOnline = UI.h('button',{class:'btn',type:'button'},['Enable Online AI']);
+const btnDisableOnline = UI.h('button',{class:'btn',type:'button'},['Disable Online AI']);
+
+function refreshOnlineButtons(){
+  const on = (localStorage.getItem('mk_companion_online')||'false')==='true';
+  btnEnableOnline.disabled = on;
+  btnDisableOnline.disabled = !on;
+}
+
+btnEnableOnline.onclick = ()=>{
+  if(!((localStorage.getItem('mk_companion_enabled')||'false')==='true')){
+    localStorage.setItem('mk_companion_enabled','true');
+    chkComp.checked = true;
+  }
+  const ok = window.confirm(
+    'Enable Online AI?\n\nThis may send your Companion text to an AI service online.\n\n• You can disable it anytime.\n• Offline templates still remain available.\n'
+  );
+  if(!ok) return;
+  localStorage.setItem('mk_companion_online','true');
+  if(window.TrackboardUI && TrackboardUI.setCompanionOnline) TrackboardUI.setCompanionOnline(true);
+  refreshOnlineButtons();
+  UI.toast('Online AI enabled.');
+};
+
+btnDisableOnline.onclick = ()=>{
+  localStorage.setItem('mk_companion_online','false');
+  if(window.TrackboardUI && TrackboardUI.setCompanionOnline) TrackboardUI.setCompanionOnline(false);
+  refreshOnlineButtons();
+  UI.toast('Online AI disabled.');
+};
+
+refreshOnlineButtons();
+
+const cardCompanion = UI.h('div',{class:'card'},[
+  UI.h('div',{class:'card-h'},[
+    UI.h('div',{},[
+      UI.h('div',{class:'h2'},['Companion']),
+      UI.h('div',{class:'small'},['Optional support across the app. Works offline with templates, or online with AI (with consent).'])
+    ]),
+    UI.h('span',{class:'pill'},[compOnline ? 'On · Online AI' : (compEnabled ? 'On' : 'Off')])
+  ]),
+  UI.h('div',{class:'row'},[
+    UI.h('label',{class:'chk'},[chkComp, UI.h('span',{},['Enable Companion'])])
+  ]),
+  UI.h('div',{class:'row'},[
+    UI.h('div',{class:'small',style:'min-width:64px'},['Voice']),
+    selVoice,
+    UI.h('div',{class:'small',style:'margin-left:auto;opacity:.8'},['Short, practical replies'])
+  ]),
+  UI.h('div',{class:'row'},[
+    UI.h('div',{class:'small',style:'min-width:96px'},['Online AI:']),
+    btnEnableOnline,
+    btnDisableOnline
+  ]),
+  UI.h('div',{class:'small',style:'opacity:.85;margin-top:6px'},[
+    'Online AI may send your Companion text to an AI service. You will be asked to agree first.'
+  ])
+]);
+
+

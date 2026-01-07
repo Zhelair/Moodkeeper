@@ -459,6 +459,50 @@ function classifyTone(raw){
   return 'unclear';
 }
 
+
+function _detectFunCommand(text){
+  const t = (text||'').trim().toLowerCase();
+  // Jokes
+  if(/\b(joke|make me laugh|funny)\b/.test(t) || t === 'tell me a joke' || t.startsWith('tell me a joke')){
+    return {type:'joke'};
+  }
+  // Puzzles / mini-games
+  if(/\b(puzzle|riddle|brain teaser|minigame|mini game)\b/.test(t) || t.startsWith('give me a puzzle') || t.startsWith('puzzle:')){
+    return {type:'puzzle'};
+  }
+  // Quick math prompt
+  if(/^\s*math\s*[:\-]/.test(t) || t.startsWith('give me a math')){
+    return {type:'math'};
+  }
+  return null;
+}
+
+function _funResponse(cmd){
+  if(!cmd) return null;
+  if(cmd.type==='joke'){
+    const jokes = [
+      "I told my brain we’re having a calm day. It scheduled a crisis meeting anyway.",
+      "My mood tracker asked how I feel. I said: 'Loading… 87%'",
+      "I tried to outrun my thoughts. They brought snacks and followed me.",
+      "Today’s plan: be productive. Reality: be a potato with good intentions.",
+      "I asked for inner peace. My mind offered 'inner notifications' instead."
+    ];
+    return jokes[Math.floor(Math.random()*jokes.length)];
+  }
+  if(cmd.type==='puzzle'){
+    const puzzles = [
+      "Puzzle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I? (Answer: an echo.)",
+      "Puzzle: What has to be broken before you can use it? (Answer: an egg.)",
+      "Puzzle: What goes up but never comes down? (Answer: your age.)"
+    ];
+    return puzzles[Math.floor(Math.random()*puzzles.length)];
+  }
+  if(cmd.type==='math'){
+    return "Mini-game: pick a number from 1–9. Multiply by 9. Add the digits. (You’ll always end up with 9.) Want a harder one?";
+  }
+  return null;
+}
+
 function mockMirror(text){
   const tone = classifyTone(text);
   if(_talkVoice === 'clear'){
@@ -693,4 +737,71 @@ window.TrackboardUI = {
 
   window.UI = { toast, h, fmtDate, weekBounds, inRange, openCalmSpace };
 
-})();
+})()
+function showCompanionIntro(opts){
+  const root = document.createElement('div');
+  root.className = 'modal-backdrop';
+  root.innerHTML = `
+    <div class="modal card" style="max-width:560px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div>
+          <div class="h2" style="margin:0 0 6px 0">Meet Companion</div>
+          <div class="small" style="line-height:1.45">
+            Companion helps you notice patterns, reflect on moods, and gently support your goals — from daily check-ins to alcohol tracking and stress.
+            <br><br>
+            It’s optional. You stay in control.
+            <br><br>
+            Companion can work offline using on-device templates, or online using AI to generate deeper reflections. You choose how far it goes.
+          </div>
+        </div>
+        <button class="btn ghost" type="button" aria-label="Close" id="mkIntroClose">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
+        <button class="btn" type="button" id="mkIntroOffline">Use Companion (offline only)</button>
+        <button class="btn primary" type="button" id="mkIntroOnline">Use Companion with Online AI</button>
+        <button class="btn ghost" type="button" id="mkIntroNotNow">Not now</button>
+      </div>
+
+      <div class="small" style="margin-top:10px;opacity:.85">
+        Online AI may send your Companion text to an AI service. You will be asked to agree first.
+      </div>
+    </div>
+  `;
+  document.body.appendChild(root);
+
+  function close(){ root.remove(); }
+  root.addEventListener('click', (e)=>{ if(e.target===root) close(); });
+  root.querySelector('#mkIntroClose').onclick = close;
+
+  const onDone = (opts && opts.onDone) ? opts.onDone : ()=>{};
+  root.querySelector('#mkIntroOffline').onclick = ()=>{
+    localStorage.setItem('mk_companion_enabled','true');
+    localStorage.setItem('mk_companion_online','false');
+    TrackboardUI.setCompanionOnline(false);
+    localStorage.setItem('mk_companion_intro_done','true');
+    close(); onDone({enabled:true, online:false});
+  };
+
+  root.querySelector('#mkIntroOnline').onclick = ()=>{
+    const ok = window.confirm(
+      'Enable Online AI?\n\nThis may send your Companion text to an AI service online.\n\n• You can disable it anytime in Settings.\n• Offline templates still remain available.\n'
+    );
+    if(!ok) return;
+    localStorage.setItem('mk_companion_enabled','true');
+    localStorage.setItem('mk_companion_online','true');
+    TrackboardUI.setCompanionOnline(true);
+    localStorage.setItem('mk_companion_intro_done','true');
+    close(); onDone({enabled:true, online:true});
+  };
+
+  root.querySelector('#mkIntroNotNow').onclick = ()=>{
+    localStorage.setItem('mk_companion_enabled','false');
+    localStorage.setItem('mk_companion_online','false');
+    TrackboardUI.setCompanionOnline(false);
+    localStorage.setItem('mk_companion_intro_done','true');
+    close(); onDone({enabled:false, online:false});
+  };
+}
+
+;

@@ -57,7 +57,15 @@
     // Initialize Companion shell (Phase C - Sprint 3 Step 1)
     if(window.TrackboardUI && TrackboardUI.initCompanion) TrackboardUI.initCompanion();
 
-    // If locked, go to unlock
+    
+  // Show Companion intro once (first run only)
+  try{
+    const done = (localStorage.getItem('mk_companion_intro_done')||'false')==='true';
+    if(!done && window.TrackboardUI && TrackboardUI.showCompanionIntro){
+      TrackboardUI.showCompanionIntro();
+    }
+  }catch(e){}
+// If locked, go to unlock
     if(window.Security && Security.isEnabled() && !Security.isUnlocked()){
       TrackboardRouter.go('unlock');
     }
