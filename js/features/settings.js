@@ -13,6 +13,114 @@
       UI.h('div',{class:'small'},['Private by design. No accounts. No servers.'])
     ]));
 
+    // Support (Phase 1 — no payments yet)
+    function openSupportModal(){
+      const modal = UI.h('div',{class:'modal open', role:'dialog','aria-modal':'true'},[]);
+      const card = UI.h('div',{class:'modal-card'},[]);
+      const head = UI.h('div',{class:'modal-head'},[
+        UI.h('div',{class:'h2'},['Support Moodkeeper']),
+        UI.h('button',{class:'icon-btn', type:'button', 'aria-label':'Close', title:'Close', onClick:()=> modal.remove()},['✕'])
+      ]);
+
+      const body = UI.h('div',{class:'stack'},[]);
+
+      // Small jump links inside the modal (same screen, minimal UI)
+      const jumpRow = UI.h('div',{class:'row', style:'gap:8px;flex-wrap:wrap'},[
+        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'about'},['About']),
+        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'privacy'},['Independence']),
+        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'faq'},['FAQ']),
+        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'policy'},['Policy'])
+      ]);
+      body.appendChild(jumpRow);
+      body.appendChild(UI.h('div',{class:'hr'},[]));
+
+      function section(id, title, lines){
+        return UI.h('div',{id, class:'stack', style:'gap:6px'},[
+          UI.h('div',{class:'h2'},[title]),
+          ...lines.map(t=> UI.h('div',{class:'small'},[t]))
+        ]);
+      }
+
+      // Main support copy
+      body.appendChild(section('about','About Moodkeeper',[
+        'Moodkeeper is a calm, private space for noticing how life feels — without pressure, judgment, or optimization.',
+        'It’s designed to support reflection, not performance.'
+      ]));
+      body.appendChild(UI.h('div',{class:'hr'},[]));
+
+      body.appendChild(section('privacy','Independence & Privacy',[
+        'Moodkeeper is built to stay calm, private, and independent.',
+        'There are no ads, no data sales, and no tracking beyond what stays on your device.',
+        'Support from users helps keep the project sustainable without compromising these principles.'
+      ]));
+      body.appendChild(UI.h('div',{class:'hr'},[]));
+
+      body.appendChild(section('supporting','Supporting the project',[
+        'If you choose to support the project, you unlock deeper reflections and pattern awareness — while everything essential remains free.',
+        'Supporting Moodkeeper is not a service contract.',
+        'It’s a way to support the project and unlock deeper insights as it evolves.',
+        'Support is optional. You can stop anytime.'
+      ]));
+      body.appendChild(UI.h('div',{class:'hr'},[]));
+
+      body.appendChild(section('faq','FAQ',[
+        'Is Moodkeeper free?  Yes. All core features remain free.',
+        'What do I get by supporting?  Deeper insights, longer-term reflections, and additional Companion options.',
+        'Can I stop supporting?  Yes — anytime.',
+        'Is my data safe?  Yes. Your data stays on your device.'
+      ]));
+      body.appendChild(UI.h('div',{class:'hr'},[]));
+
+      body.appendChild(section('policy','Support & Refund Policy',[
+        'Supporting Moodkeeper helps keep the project independent, private, and ad-free.',
+        'If something goes wrong or support was activated by mistake, you can request a refund. Refunds are handled fairly and in good faith.',
+        'If the project is discontinued, active subscriptions (if any) will be cancelled.'
+      ]));
+
+      const actions = UI.h('div',{class:'row', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
+        UI.h('button',{class:'btn ghost', type:'button', onClick:()=> modal.remove()},['Not now']),
+        UI.h('button',{class:'btn primary', type:'button', id:'btn-support-project'},['Support the project'])
+      ]);
+
+      function showThanks(){
+        // Keep it simple for Phase 1: flow test only
+        UI.toast('Thank you for considering supporting the project.');
+      }
+
+      card.appendChild(head);
+      card.appendChild(body);
+      card.appendChild(actions);
+      modal.appendChild(card);
+
+      // Clicking outside closes
+      modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.remove(); });
+
+      // Jump links
+      jumpRow.addEventListener('click',(e)=>{
+        const btn = e.target.closest('[data-jump]');
+        if(!btn) return;
+        const id = btn.dataset.jump;
+        const el = card.querySelector('#'+id);
+        if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+
+      // Support action
+      actions.addEventListener('click',(e)=>{
+        const b = e.target.closest('#btn-support-project');
+        if(!b) return;
+        showThanks();
+      });
+
+      document.body.appendChild(modal);
+    }
+
+    const supportCard = UI.h('div',{class:'card soft', style:'cursor:pointer'},[
+      UI.h('div',{class:'h2'},['Support Moodkeeper']),
+      UI.h('div',{class:'small'},['Help keep the project independent and ad-free.'])
+    ]);
+    supportCard.addEventListener('click', openSupportModal);
+    stack.appendChild(supportCard);
+
     // Theme + Rest mode
     const theme = await Store.getSetting('theme') || 'morning';
     const restMode = !!(await Store.getSetting('rest_mode'));
