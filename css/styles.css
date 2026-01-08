@@ -621,7 +621,9 @@ body.theme-dark .tododrawer{
 }
 .todoinput{ margin-top: 8px; }
 
-.companion-fab:active{ transform: translateY(1px); }
+.companion-fab:hover{ box-shadow: 0 12px 28px rgba(0,0,0,.12), 0 3px 8px rgba(0,0,0,.08); }
+
+.companion-fab:active{ transform: translateY(1px) scale(.98); }
 .companion-fab:focus-visible{ outline: 2px solid rgba(39,174,96,.35); outline-offset: 2px; }
 
 body.theme-dark .companion-fab{
@@ -634,7 +636,7 @@ body.theme-dark .companion-fab{
   width: 26px;
   height: 26px;
   color: rgba(46,32,18,.55);
-  animation: companionBreathe 4s ease-in-out infinite;
+  animation: companionBreathe 2.8s ease-in-out infinite;
 }
 
 /* Rest mode: quieter visuals (slower + smaller motion, less "hello there" energy) */
@@ -645,8 +647,8 @@ body.rest-on .companion-flower{
 
 body.theme-dark .companion-flower{ color: rgba(255,255,255,.58); }
 @keyframes companionBreathe{
-  0%,100%{ transform: translateY(0) scale(1); }
-  50%{ transform: translateY(-2px) scale(1.03); }
+  0%,100%{ transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+  50%{ transform: translate3d(1px,-3px,0) rotate(-1deg) scale(1.04); }
 }
 
 @keyframes companionBreatheRest{
