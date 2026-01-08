@@ -67,8 +67,9 @@
       ]);
 
       function showThanks(){
-        // Keep it simple for Phase 1: flow test only
-        UI.toast('Thank you for considering supporting the project.');
+        // Phase 1: open external support page (no unlock logic yet)
+        window.open('https://buymeacoffee.com/niksales73', '_blank', 'noopener,noreferrer');
+        UI.toast('Opening support…');
       }
 
       card.appendChild(head);
