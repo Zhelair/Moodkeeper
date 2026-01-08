@@ -61,13 +61,7 @@
       ]));
       body.appendChild(UI.h('div',{class:'hr'},[]));
 
-      body.appendChild(section('policy','Support & Refund Policy',[
-        'Supporting Moodkeeper helps keep the project independent, private, and ad-free.',
-        'If something goes wrong or support was activated by mistake, you can request a refund. Refunds are handled fairly and in good faith.',
-        'If the project is discontinued, active subscriptions (if any) will be cancelled.'
-      ]));
-
-      const actions = UI.h('div',{class:'row modal-foot', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
+       const actions = UI.h('div',{class:'row modal-foot', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
         UI.h('button',{class:'btn ghost', type:'button', onClick:()=> modal.remove()},['Not now']),
         UI.h('button',{class:'btn primary support-primary', type:'button', id:'btn-support-project'},['Support the project'])
       ]);
