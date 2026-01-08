@@ -22,17 +22,7 @@
         UI.h('button',{class:'icon-btn', type:'button', 'aria-label':'Close', title:'Close', onClick:()=> modal.remove()},['✕'])
       ]);
 
-      const body = UI.h('div',{class:'stack'},[]);
-
-      // Small jump links inside the modal (same screen, minimal UI)
-      const jumpRow = UI.h('div',{class:'row', style:'gap:8px;flex-wrap:wrap'},[
-        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'about'},['About']),
-        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'privacy'},['Independence']),
-        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'faq'},['FAQ']),
-        UI.h('button',{class:'btn tiny ghost', type:'button', 'data-jump':'policy'},['Policy'])
-      ]);
-      body.appendChild(jumpRow);
-      body.appendChild(UI.h('div',{class:'hr'},[]));
+      const body = UI.h('div',{class:'stack modal-body-scroll'},[]);
 
       function section(id, title, lines){
         return UI.h('div',{id, class:'stack', style:'gap:6px'},[
@@ -77,9 +67,9 @@
         'If the project is discontinued, active subscriptions (if any) will be cancelled.'
       ]));
 
-      const actions = UI.h('div',{class:'row', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
+      const actions = UI.h('div',{class:'row modal-foot', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
         UI.h('button',{class:'btn ghost', type:'button', onClick:()=> modal.remove()},['Not now']),
-        UI.h('button',{class:'btn primary', type:'button', id:'btn-support-project'},['Support the project'])
+        UI.h('button',{class:'btn primary support-primary', type:'button', id:'btn-support-project'},['Support the project'])
       ]);
 
       function showThanks(){
@@ -114,7 +104,7 @@
       document.body.appendChild(modal);
     }
 
-    const supportCard = UI.h('div',{class:'card soft', style:'cursor:pointer'},[
+    const supportCard = UI.h('div',{class:'card soft support-card', style:'cursor:pointer'},[
       UI.h('div',{class:'h2'},['Support Moodkeeper']),
       UI.h('div',{class:'small'},['Help keep the project independent and ad-free.'])
     ]);
@@ -196,7 +186,7 @@ function openOnlineAIConsent(){
       UI.h('div',{class:'small muted'},['What is not sent: your history (unless you paste it), your passphrase/lock data, or anything from other screens.']),
       UI.h('div',{class:'small muted'},['You can disable Online AI anytime in Settings.'])
     ]);
-    const actions = UI.h('div',{class:'row', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
+    const actions = UI.h('div',{class:'row modal-foot', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
       UI.h('button',{class:'btn ghost', type:'button', onClick:()=>{ modal.remove(); resolve(false); }},['Cancel']),
       UI.h('button',{class:'btn primary', type:'button', onClick:()=>{ modal.remove(); resolve(true); }},['I agree — Enable Online AI'])
     ]);
