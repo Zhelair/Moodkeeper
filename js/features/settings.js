@@ -85,15 +85,6 @@
       // Clicking outside closes
       modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.remove(); });
 
-      // Jump links
-      jumpRow.addEventListener('click',(e)=>{
-        const btn = e.target.closest('[data-jump]');
-        if(!btn) return;
-        const id = btn.dataset.jump;
-        const el = card.querySelector('#'+id);
-        if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
-      });
-
       // Support action
       actions.addEventListener('click',(e)=>{
         const b = e.target.closest('#btn-support-project');
