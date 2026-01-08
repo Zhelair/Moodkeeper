@@ -634,7 +634,7 @@ body.theme-dark .companion-fab{
   width: 26px;
   height: 26px;
   color: rgba(46,32,18,.55);
-  animation: companionBreathe 10s ease-in-out infinite;
+  animation: companionBreathe 4s ease-in-out infinite;
 }
 
 /* Rest mode: quieter visuals (slower + smaller motion, less "hello there" energy) */
