@@ -178,6 +178,9 @@ async function showCompanionIntro(){
       if(TrackboardUI.syncCompanionFromSettings) await TrackboardUI.syncCompanionFromSettings();
       else if(TrackboardUI.initCompanion) TrackboardUI.initCompanion();
 
+      // Rest mode (quiet visuals)
+      if(TrackboardUI.syncRestFromSettings) await TrackboardUI.syncRestFromSettings();
+
       // Sprint 9: To‑Do is local-only and always available
       if(TrackboardUI.initTodo) TrackboardUI.initTodo();
       if(TrackboardUI.syncTodoIndicator) TrackboardUI.syncTodoIndicator();

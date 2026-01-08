@@ -637,10 +637,21 @@ body.theme-dark .companion-fab{
   animation: companionBreathe 10s ease-in-out infinite;
 }
 
+/* Rest mode: quieter visuals (slower + smaller motion, less "hello there" energy) */
+body.rest-on .companion-flower{
+  animation: companionBreatheRest 16s ease-in-out infinite;
+  opacity: .82;
+}
+
 body.theme-dark .companion-flower{ color: rgba(255,255,255,.58); }
 @keyframes companionBreathe{
   0%,100%{ transform: translateY(0) scale(1); }
   50%{ transform: translateY(-2px) scale(1.03); }
+}
+
+@keyframes companionBreatheRest{
+  0%,100%{ transform: translateY(0) scale(1); }
+  50%{ transform: translateY(-1px) scale(1.01); }
 }
 
 /* Talk drawer shell */

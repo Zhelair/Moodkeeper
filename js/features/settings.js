@@ -13,8 +13,9 @@
       UI.h('div',{class:'small'},['Private by design. No accounts. No servers.'])
     ]));
 
-    // Theme
+    // Theme + Rest mode
     const theme = await Store.getSetting('theme') || 'morning';
+    const restMode = !!(await Store.getSetting('rest_mode'));
     const themeCard = UI.h('div',{class:'card'},[
       UI.h('div',{class:'h2'},['Theme']),
       UI.h('div',{class:'small'},['Choose the atmosphere.']),
@@ -22,7 +23,17 @@
         UI.h('button',{class:'btn small'+(theme==='morning'?' primary':''), type:'button', 'data-theme':'morning'},['Calm Morning']),
         UI.h('button',{class:'btn small'+(theme==='notebook'?' primary':''), type:'button', 'data-theme':'notebook'},['Warm Notebook']),
         UI.h('button',{class:'btn small'+(theme==='dark'?' primary':''), type:'button', 'data-theme':'dark'},['Dark'])
-      ])
+      ]),
+      UI.h('div',{style:'height:10px'}),
+      UI.h('div',{class:'toggle-row'},[
+        UI.h('div',{class:'small'},['Rest']),
+        UI.h('div',{class:'pill'},[ restMode ? '🌙' : '☀️' ]),
+        UI.h('div',{style:'margin-left:auto; display:flex; gap:8px'},[
+          UI.h('button',{class:'btn tiny'+(!restMode?' primary':''), type:'button', id:'rest-off'},['☀️']),
+          UI.h('button',{class:'btn tiny'+(restMode?' primary':''), type:'button', id:'rest-on'},['🌙'])
+        ])
+      ]),
+      UI.h('div',{class:'small muted'},["When enabled, Moodkeeper’s visuals stay quiet. No prompts. Just presence."])
     ]);
 
 // Companion
@@ -199,6 +210,20 @@ btnDisableAI.addEventListener('click', async ()=>{
       });
       UI.toast('Theme updated.');
     });
+
+    // Rest mode interactions (quiet visuals)
+    const restPill = themeCard.querySelector('.pill');
+    const restOff = document.getElementById('rest-off');
+    const restOn = document.getElementById('rest-on');
+    async function setRest(on){
+      await Store.setSetting('rest_mode', !!on);
+      if(restPill) restPill.textContent = on ? '🌙' : '☀️';
+      if(restOff) restOff.classList.toggle('primary', !on);
+      if(restOn) restOn.classList.toggle('primary', !!on);
+      try{ if(window.TrackboardUI && TrackboardUI.applyRestMode) TrackboardUI.applyRestMode(!!on); }catch(e){}
+    }
+    if(restOff) restOff.addEventListener('click', ()=> setRest(false));
+    if(restOn) restOn.addEventListener('click', ()=> setRest(true));
 
     // Security UI
     const enabledBox = document.getElementById('sec-enabled');

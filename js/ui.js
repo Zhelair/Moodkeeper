@@ -419,8 +419,13 @@ function setActiveISO(iso){
   let _talkTextEl = null;
   let _talkDraft = '';
   let _talkReplyEl = null;
+  let _talkPromptEl = null;
+  let _talkWeeklyBtn = null;
   let _talkVoice = (localStorage.getItem('mk_voice') || 'gentle');
   let _talkLast = null; // { kind, text, voice, ts }
+
+  // Rest mode: quiet visuals + no surfaced prompts.
+  let _restMode = false;
 
 
 
@@ -821,7 +826,7 @@ function runMock(kind){
         }, ['✕'])
       ]),
       h('div', { class:'talkdrawer-body talkpanel' }, [
-        h('div', { class:'talkprompt muted' }, ['What\'s on your mind?']),
+        (_talkPromptEl = h('div', { class:'talkprompt muted' }, ['What\'s on your mind?'])),
 h('div', { class:'talkmeta' }, [
   h('label', { class:'talkmeta-label muted', for:'talk-voice' }, ['Voice']),
   h('select', { id:'talk-voice', class:'talkmeta-select', onChange:(e)=>{ setTalkVoice(e.target.value); toast('Voice: ' + getTalkVoiceLabel(_talkVoice)); if(_talkLast){ _talkLast.voice=_talkVoice; renderTalkReply(); } } }, [
@@ -868,9 +873,9 @@ h('div', { class:'talkmeta' }, [
           h('button', { class:'btn ghost full', type:'button', onClick:()=>{
             runMock('perspective');
           }}, ['Gentle perspective']),
-          h('button', { class:'btn ghost full', type:'button', onClick:()=>{
+          (_talkWeeklyBtn = h('button', { class:'btn ghost full', type:'button', onClick:()=>{
             runWeeklyInsight();
-          }}, ['What did you notice this week?'])
+          }}, ['What did you notice this week?']))
         ]),
         h('div', { class:'talkfoot muted' }, [
           'No auto-save. Close anytime.'
@@ -887,6 +892,7 @@ h('div', { class:'talkmeta' }, [
     }catch(e){}
 
     _talkDrawer = drawer;
+    _applyRestToTalkUI();
     return drawer;
   }
 
@@ -925,6 +931,26 @@ h('div', { class:'talkmeta' }, [
     }
     const voice = await Store.getSetting('companion_voice');
     if(voice){ setTalkVoice(voice); }
+  }
+
+  function _applyRestToTalkUI(){
+    // In Rest mode we keep the panel usable, but remove surfaced prompts.
+    try{
+      if(_talkPromptEl) _talkPromptEl.style.display = _restMode ? 'none' : '';
+      if(_talkWeeklyBtn) _talkWeeklyBtn.style.display = _restMode ? 'none' : '';
+    }catch(e){}
+  }
+
+  function applyRestMode(on){
+    _restMode = !!on;
+    try{ document.body.classList.toggle('rest-on', _restMode); }catch(e){}
+    _applyRestToTalkUI();
+  }
+
+  async function syncRestFromSettings(){
+    if(!window.Store) return;
+    const on = !!(await Store.getSetting('rest_mode'));
+    applyRestMode(on);
   }
 
 
@@ -1226,6 +1252,8 @@ window.TrackboardUI = {
     setTalkVoice,
     destroyCompanion,
     syncCompanionFromSettings,
+    applyRestMode,
+    syncRestFromSettings,
     // To‑Do
     initTodo,
     openTodoPanel,
