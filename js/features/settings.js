@@ -84,7 +84,7 @@
       actions.addEventListener('click',(e)=>{
         const b = e.target.closest('#btn-support-project');
         if(!b) return;
-        window.open('https://buymeacoffee.com/niksales73', '_blank', 'noopener');
+        window.open('buymeacoffee.com/niksales73l', '_blank', 'noopener');
       });
 
       document.body.appendChild(modal);
