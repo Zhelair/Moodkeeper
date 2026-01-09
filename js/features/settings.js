@@ -67,9 +67,8 @@
       ]);
 
       function showThanks(){
-        // Phase 1: open external support page (no unlock logic yet)
-        window.open('buymeacoffee.com/niksales73l', '_blank', 'noopener,noreferrer');
-        UI.toast('Opening support…');
+        // Keep it simple for Phase 1: flow test only
+        UI.toast('Thank you for considering supporting the project.');
       }
 
       card.appendChild(head);
@@ -84,7 +83,7 @@
       actions.addEventListener('click',(e)=>{
         const b = e.target.closest('#btn-support-project');
         if(!b) return;
-        window.open('buymeacoffee.com/niksales73l', '_blank', 'noopener');
+        showThanks();
       });
 
       document.body.appendChild(modal);
