@@ -68,7 +68,7 @@
 
       function showThanks(){
         // Phase 1: open external support page (no unlock logic yet)
-        window.open('https://buymeacoffee.com/niksales73', '_blank', 'noopener,noreferrer');
+        window.open('buymeacoffee.com/niksales73l', '_blank', 'noopener,noreferrer');
         UI.toast('Opening support…');
       }
 
