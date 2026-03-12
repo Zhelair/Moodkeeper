@@ -124,7 +124,7 @@ function setActiveISO(iso){
 
   function pastDayNoteEl(){
     if(!activeIsPast()) return null;
-    return h('div', { class: 'small muted', style:'margin-top:6px' }, ["You’re logging for a past day."]);
+    return h('div', { class: 'small muted', style:'margin-top:6px' }, ["You're logging for a past day."]);
   }
 
   function openDatePicker(){
@@ -287,12 +287,12 @@ function setActiveISO(iso){
       const pct = Math.max(0, Math.min(1, remaining/seconds));
       body.innerHTML = `
         <div class="h2" style="margin:0 0 6px 0;">${mm}:${ss}</div>
-        <div class="muted">You don’t need to decide yet.</div>
+        <div class="muted">You don't need to decide yet.</div>
         <div class="mt">
           <div class="meter"><div class="meterfill" style="width:${(pct*100).toFixed(1)}%"></div></div>
         </div>
         <div class="row mt" style="gap:10px;">
-          <button class="btn primary" id="tb-timer-ok">I’m okay</button>
+          <button class="btn primary" id="tb-timer-ok">I'm okay</button>
           <button class="btn" id="tb-timer-reset">Reset 10 min</button>
         </div>
         <div class="mt small muted">Ending early still counts.</div>
@@ -528,26 +528,26 @@ let _talkMini = null; // { mode:'puzzle', q, a, alts?:[], askedAt }
 
 const _JOKES = [
   "I tried mindfulness once. My brain filed a complaint.",
-  "Today’s win: I didn’t argue with an imaginary person. Progress.",
-  "I told myself I’d be productive. My couch said, “we’ll see.”",
-  "My mood swings have a schedule. Unfortunately, I don’t have the calendar.",
-  "I’m not procrastinating — I’m doing “delayed excellence.”",
+  "Today's win: I didn't argue with an imaginary person. Progress.",
+  "I told myself I'd be productive. My couch said, “we'll see.”",
+  "My mood swings have a schedule. Unfortunately, I don't have the calendar.",
+  "I'm not procrastinating — I'm doing “delayed excellence.”",
   "I cleaned for five minutes. My home is now 7% more heroic.",
   "I wanted a sign from the universe. I got an unread notification instead.",
-  "My inner critic is loud. I’m considering noise-cancelling boundaries."
+  "My inner critic is loud. I'm considering noise-cancelling boundaries."
 ];
 
 const _PUZZLES = [
-  { q:"Quick math: What’s 12 × 8?", a:"96" },
+  { q:"Quick math: What's 12 × 8?", a:"96" },
   { q:"Logic: Which is heavier — 1 kg of feathers or 1 kg of iron?", a:"same", alts:["they are the same","equal","both","neither"] },
   { q:"Pattern: What comes next? 2, 4, 8, 16, ?", a:"32" },
   { q:"Riddle: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", a:"echo" },
   { q:"Quick math: If you have 3 apples and you take away 2, how many do you have?", a:"2", alts:["two"] },
   { q:"Logic: A bat and a ball cost $1.10 total. The bat costs $1 more than the ball. How much is the ball?", a:"0.05", alts:["5 cents","$0.05","0.05 dollars","five cents"] },
   { q:"Pattern: What comes next? A, C, F, J, O, ?", a:"u", alts:["U"] }, // increments: +2,+3,+4,+5,+6
-  { q:"Riddle: What has keys but can’t open locks?", a:"piano", alts:["a piano","keyboard"] },
-  { q:"Quick math: What’s 15% of 200?", a:"30" },
-  { q:"Logic: You’re running a race and you pass the person in 2nd place. What place are you in?", a:"second", alts:["2nd","2","second place"] },
+  { q:"Riddle: What has keys but can't open locks?", a:"piano", alts:["a piano","keyboard"] },
+  { q:"Quick math: What's 15% of 200?", a:"30" },
+  { q:"Logic: You're running a race and you pass the person in 2nd place. What place are you in?", a:"second", alts:["2nd","2","second place"] },
   { q:"Riddle: What gets wetter the more it dries?", a:"towel", alts:["a towel"] },
   { q:"Pattern: What comes next? 1, 1, 2, 3, 5, 8, ?", a:"13" }
 ];
@@ -636,7 +636,7 @@ function mockMirror(text){
   const p = classifyPolarity(text);
 
   if(v === 'direct'){
-    if(p === 'positive') return 'You’re feeling good. That’s the main signal here.';
+    if(p === 'positive') return "You're feeling good. That's the main signal here.";
     if(p === 'neutral')  return 'This reads as factual/neutral — not much emotion attached.';
     if(p === 'mixed')    return 'This reads as mixed: some good, some strain.';
     return 'This reads as difficult — stress or heaviness is present.';
@@ -646,7 +646,7 @@ function mockMirror(text){
     if(p === 'positive') return 'This reads as genuinely good — lighter, more settled.';
     if(p === 'neutral')  return 'This feels neutral — just reporting what happened.';
     if(p === 'mixed')    return 'This reads as both okay and strained at the same time.';
-    return 'This feels heavy. You’re carrying something real here.';
+    return "This feels heavy. You're carrying something real here.";
   }
 
   if(p === 'positive') return 'This reads as good — a lighter kind of day.';
@@ -668,53 +668,53 @@ function mockPerspective(text){
 
   if(v === 'supportive'){
     if(p === 'positive') return 'Nice. If you want, name one thing that helped — small wins matter.';
-    if(p === 'neutral')  return 'You don’t have to force meaning here. A small reset is plenty.';
+    if(p === 'neutral')  return "You don't have to force meaning here. A small reset is plenty.";
     if(p === 'mixed')    return 'Both can be true. If you want, take one small stabilizing step and breathe.';
-    return 'You don’t have to fix everything today. One small, kind step is enough.';
+    return "You don't have to fix everything today. One small, kind step is enough.";
   }
 
-  if(p === 'positive') return 'That’s good to hear. If you want, gently notice what made today easier.';
-  if(p === 'neutral')  return 'It’s okay for a day to be neutral. A small pause can be enough.';
+  if(p === 'positive') return "That's good to hear. If you want, gently notice what made today easier.";
+  if(p === 'neutral')  return "It's okay for a day to be neutral. A small pause can be enough.";
   if(p === 'mixed')    return 'Both sides can exist at once. If you want, take one small steadying step.';
-  return 'You don’t need to solve this right now. A small pause or one gentle step is enough.';
+  return "You don't need to solve this right now. A small pause or one gentle step is enough.";
 }
 
 async function runMock(kind){
-  const t = (_talkDraft||’’).trim();
+  const t = (_talkDraft||'').trim();
 
   // If a puzzle is awaiting an answer, treat the next input as the answer.
-  if(_talkMini && _talkMini.mode === ‘puzzle’){
+  if(_talkMini && _talkMini.mode === 'puzzle'){
     if(!t){
       const msg = "Type your answer in the box, then press the button again.";
-      _talkLast = { kind:’puzzle’, text: msg, voice: _talkVoice, ts: Date.now() };
+      _talkLast = { kind:'puzzle', text: msg, voice: _talkVoice, ts: Date.now() };
       renderTalkReply();
       return;
     }
     const out = _puzzleCheck(t);
-    _talkLast = { kind:’puzzle’, text: out, voice: _talkVoice, ts: Date.now() };
+    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
   }
 
   // Natural language fun intents (jokes / puzzles)
   const intent = detectFunIntent(t);
-  if(intent === ‘joke’){
+  if(intent === 'joke'){
     const out = _jokeReply(_talkVoice);
-    _talkLast = { kind:’joke’, text: out, voice: _talkVoice, ts: Date.now() };
+    _talkLast = { kind:'joke', text: out, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
   }
-  if(intent === ‘puzzle’){
+  if(intent === 'puzzle'){
     const out = _puzzleAsk();
-    _talkLast = { kind:’puzzle’, text: out, voice: _talkVoice, ts: Date.now() };
+    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
   }
 
   if(!t || t.length < 4){
-    const msg = (kind === ‘mirror’)
-      ? ‘There isn\’t enough here for me to mirror yet.’
-      : ‘There isn\’t much here to reflect on yet. That\’s okay.’;
+    const msg = (kind === 'mirror')
+      ? 'There isn\'t enough here for me to mirror yet.'
+      : 'There isn\'t much here to reflect on yet. That\'s okay.';
     _talkLast = { kind, text: msg, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
@@ -724,11 +724,11 @@ async function runMock(kind){
   if(window.AI){
     const ready = await AI.hasKey().catch(()=>false);
     if(ready){
-      showTalkLoading(kind === ‘mirror’ ? ‘Reflecting…’ : ‘Finding perspective…’);
+      showTalkLoading(kind === 'mirror' ? 'Reflecting…' : 'Finding perspective…');
       try{
-        const prompt = kind === ‘mirror’
-          ? ‘Mirror back the emotional tone of what I wrote, briefly: ‘ + t
-          : ‘Offer a gentle perspective on what I wrote, briefly: ‘ + t;
+        const prompt = kind === 'mirror'
+          ? 'Mirror back the emotional tone of what I wrote, briefly: ' + t
+          : 'Offer a gentle perspective on what I wrote, briefly: ' + t;
         const reply = await AI.call(prompt, { voice: _talkVoice });
         _talkLast = { kind, text: reply, voice: _talkVoice, ts: Date.now(), ai: true };
         renderTalkReply();
@@ -739,58 +739,58 @@ async function runMock(kind){
     }
   }
 
-  const out = (kind === ‘mirror’) ? mockMirror(t) : mockPerspective(t);
+  const out = (kind === 'mirror') ? mockMirror(t) : mockPerspective(t);
   _talkLast = { kind, text: out, voice: _talkVoice, ts: Date.now() };
   renderTalkReply();
 }
 
 async function runMorningBriefing(){
   if(!window.AI){
-    UI.toast && UI.toast(‘AI not available.’);
+    UI.toast && UI.toast('AI not available.');
     return;
   }
   const ready = await AI.hasKey().catch(()=>false);
   if(!ready){
-    _talkLast = { kind:’morning’, text:’Add your AI key in Settings to get a personalised morning briefing.’, voice:_talkVoice, ts:Date.now() };
+    _talkLast = { kind:'morning', text:'Add your AI key in Settings to get a personalised morning briefing.', voice:_talkVoice, ts:Date.now() };
     renderTalkReply();
     return;
   }
-  showTalkLoading(‘Morning briefing…’);
+  showTalkLoading('Morning briefing…');
   try{
     const reply = await AI.getMorningBriefing();
-    _talkLast = { kind:’morning’, text:reply, voice:_talkVoice, ts:Date.now(), ai:true };
+    _talkLast = { kind:'morning', text:reply, voice:_talkVoice, ts:Date.now(), ai:true };
     renderTalkReply();
   }catch(err){
-    _talkLast = { kind:’morning’, text:’Couldn\’t reach AI right now. Check your key in Settings.’, voice:_talkVoice, ts:Date.now() };
+    _talkLast = { kind:'morning', text:'Couldn\'t reach AI right now. Check your key in Settings.', voice:_talkVoice, ts:Date.now() };
     renderTalkReply();
   }
 }
 
 async function runEveningDebrief(){
   if(!window.AI){
-    UI.toast && UI.toast(‘AI not available.’);
+    UI.toast && UI.toast('AI not available.');
     return;
   }
   const ready = await AI.hasKey().catch(()=>false);
   if(!ready){
-    _talkLast = { kind:’evening’, text:’Add your AI key in Settings to get a personalised evening debrief.’, voice:_talkVoice, ts:Date.now() };
+    _talkLast = { kind:'evening', text:'Add your AI key in Settings to get a personalised evening debrief.', voice:_talkVoice, ts:Date.now() };
     renderTalkReply();
     return;
   }
-  showTalkLoading(‘Evening debrief…’);
+  showTalkLoading('Evening debrief…');
   try{
     const reply = await AI.getEveningDebrief();
-    _talkLast = { kind:’evening’, text:reply, voice:_talkVoice, ts:Date.now(), ai:true };
+    _talkLast = { kind:'evening', text:reply, voice:_talkVoice, ts:Date.now(), ai:true };
     renderTalkReply();
   }catch(err){
-    _talkLast = { kind:’evening’, text:’Couldn\’t reach AI right now. Check your key in Settings.’, voice:_talkVoice, ts:Date.now() };
+    _talkLast = { kind:'evening', text:'Couldn\'t reach AI right now. Check your key in Settings.', voice:_talkVoice, ts:Date.now() };
     renderTalkReply();
   }
 }
   async function runWeeklyInsight(){
     try{
       if(!window.Store){
-        _talkLast = { kind:'weekly', text:'I can’t read your entries yet. Try again in a moment.', voice:_talkVoice, ts:Date.now() };
+        _talkLast = { kind:'weekly', text:"I can't read your entries yet. Try again in a moment.", voice:_talkVoice, ts:Date.now() };
         renderTalkReply();
         return;
       }
@@ -880,7 +880,7 @@ async function runEveningDebrief(){
       renderTalkReply();
     }catch(err){
       console.error(err);
-      _talkLast = { kind:'weekly', text:'I couldn’t build a weekly insight right now. Try again.', voice:_talkVoice, ts:Date.now() };
+      _talkLast = { kind:'weekly', text:"I couldn't build a weekly insight right now. Try again.", voice:_talkVoice, ts:Date.now() };
       renderTalkReply();
     }
   }
