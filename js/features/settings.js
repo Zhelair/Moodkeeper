@@ -13,79 +13,30 @@
       UI.h('div',{class:'small'},['Private by design. No accounts. No servers.'])
     ]));
 
-    // Support (Phase 1 — no payments yet)
+    // --- Support ---
     function openSupportModal(){
       const modal = UI.h('div',{class:'modal open', role:'dialog','aria-modal':'true'},[]);
       const card = UI.h('div',{class:'modal-card'},[]);
       const head = UI.h('div',{class:'modal-head'},[
         UI.h('div',{class:'h2'},['Support Moodkeeper']),
-        UI.h('button',{class:'icon-btn', type:'button', 'aria-label':'Close', title:'Close', onClick:()=> modal.remove()},['✕'])
+        UI.h('button',{class:'icon-btn', type:'button', 'aria-label':'Close', onClick:()=> modal.remove()},['✕'])
       ]);
-
-      const body = UI.h('div',{class:'stack modal-body-scroll'},[]);
-
-      function section(id, title, lines){
-        return UI.h('div',{id, class:'stack', style:'gap:6px'},[
-          UI.h('div',{class:'h2'},[title]),
-          ...lines.map(t=> UI.h('div',{class:'small'},[t]))
-        ]);
-      }
-
-      // Main support copy
-      body.appendChild(section('about','About Moodkeeper',[
-        'Moodkeeper is a calm, private space for noticing how life feels — without pressure, judgment, or optimization.',
-        'It’s designed to support reflection, not performance.'
-      ]));
-      body.appendChild(UI.h('div',{class:'hr'},[]));
-
-      body.appendChild(section('privacy','Independence & Privacy',[
-        'Moodkeeper is built to stay calm, private, and independent.',
-        'There are no ads, no data sales, and no tracking beyond what stays on your device.',
-        'Support from users helps keep the project sustainable without compromising these principles.'
-      ]));
-      body.appendChild(UI.h('div',{class:'hr'},[]));
-
-      body.appendChild(section('supporting','Supporting the project',[
-        'If you choose to support the project, you unlock deeper reflections and pattern awareness — while everything essential remains free.',
-        'Supporting Moodkeeper is not a service contract.',
-        'It’s a way to support the project and unlock deeper insights as it evolves.',
-        'Support is optional. You can stop anytime.'
-      ]));
-      body.appendChild(UI.h('div',{class:'hr'},[]));
-
-      body.appendChild(section('faq','FAQ',[
-        'Is Moodkeeper free?  Yes. All core features remain free.',
-        'What do I get by supporting?  Deeper insights, longer-term reflections, and additional Companion options.',
-        'Can I stop supporting?  Yes — anytime.',
-        'Is my data safe?  Yes. Your data stays on your device.'
-      ]));
-      body.appendChild(UI.h('div',{class:'hr'},[]));
-
-       const actions = UI.h('div',{class:'row modal-foot', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
+      const body = UI.h('div',{class:'stack modal-body-scroll'},[
+        UI.h('div',{class:'h2'},['About Moodkeeper']),
+        UI.h('div',{class:'small'},['A calm, private space for noticing how life feels — without pressure, judgment, or optimization.']),
+        UI.h('div',{class:'hr'},[]),
+        UI.h('div',{class:'h2'},['Independence & Privacy']),
+        UI.h('div',{class:'small'},['No ads, no data sales, no tracking beyond what stays on your device.']),
+        UI.h('div',{class:'hr'},[]),
+        UI.h('div',{class:'small'},['Support from users helps keep the project sustainable without compromising these principles.'])
+      ]);
+      const actions = UI.h('div',{class:'row modal-foot', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
         UI.h('button',{class:'btn ghost', type:'button', onClick:()=> modal.remove()},['Not now']),
-        UI.h('button',{class:'btn primary support-primary', type:'button', id:'btn-support-project'},['Support the project'])
+        UI.h('button',{class:'btn primary', type:'button', onClick:()=>{ UI.toast('Thank you for considering supporting the project.'); }},['Support the project'])
       ]);
-
-      function showThanks(){
-        // Keep it simple for Phase 1: flow test only
-        UI.toast('Thank you for considering supporting the project.');
-      }
-
-      card.appendChild(head);
-      card.appendChild(body);
-      card.appendChild(actions);
+      card.appendChild(head); card.appendChild(body); card.appendChild(actions);
       modal.appendChild(card);
-
-      // Clicking outside closes
       modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.remove(); });
-
-      // Support action
-      actions.addEventListener('click',(e)=>{
-        const b = e.target.closest('#btn-support-project');
-        if(!b) return;
-        showThanks();
-      });
-
       document.body.appendChild(modal);
     }
 
@@ -96,7 +47,7 @@
     supportCard.addEventListener('click', openSupportModal);
     stack.appendChild(supportCard);
 
-    // Theme + Rest mode
+    // --- Theme + Rest mode ---
     const theme = await Store.getSetting('theme') || 'morning';
     const restMode = !!(await Store.getSetting('rest_mode'));
     const themeCard = UI.h('div',{class:'card'},[
@@ -116,147 +67,282 @@
           UI.h('button',{class:'btn tiny'+(restMode?' primary':''), type:'button', id:'rest-on'},['🌙'])
         ])
       ]),
-      UI.h('div',{class:'small muted'},["When enabled, Moodkeeper’s visuals stay quiet. No prompts. Just presence."])
+      UI.h('div',{class:'small muted'},["When enabled, visuals stay quiet. No prompts. Just presence."])
     ]);
 
-// Companion
-const companionEnabled = !!(await Store.getSetting('companion_enabled'));
-const onlineAIEnabled = !!(await Store.getSetting('online_ai_enabled'));
-const voice = (await Store.getSetting('companion_voice')) || 'gentle';
+    // --- Companion + AI ---
+    const companionEnabled = !!(await Store.getSetting('companion_enabled'));
+    const aiProvider = (await Store.getSetting('ai_provider')) || 'deepseek';
+    const aiKey = (await Store.getSetting('ai_api_key')) || '';
+    const companionVoice = (await Store.getSetting('companion_voice')) || 'gentle';
 
-const statusEl = UI.h('div',{class:'pill', id:'companion-status'},['']);
-const updateStatus = async ()=>{
-  const ce = !!(await Store.getSetting('companion_enabled'));
-  const oa = !!(await Store.getSetting('online_ai_enabled'));
-  statusEl.textContent = ce ? (oa ? 'On · Online AI' : 'On · Offline (templates)') : 'Off';
-};
-await updateStatus();
+    // Status pill
+    const aiStatusEl = UI.h('div',{class:'pill', id:'companion-status'},[]);
+    async function updateAIStatus(){
+      const ce = !!(await Store.getSetting('companion_enabled'));
+      const key = await Store.getSetting('ai_api_key');
+      const hasAI = !!(key && String(key).trim().length > 10);
+      aiStatusEl.textContent = ce ? (hasAI ? 'On · AI ready' : 'On · Offline') : 'Off';
+    }
+    await updateAIStatus();
 
-const companionToggle = UI.h('input',{type:'checkbox', id:'companion-toggle'});
-companionToggle.checked = companionEnabled;
+    const companionToggle = UI.h('input',{type:'checkbox', id:'companion-toggle'});
+    companionToggle.checked = companionEnabled;
 
-const voiceSel = UI.h('select',{id:'companion-voice'},[
-  UI.h('option',{value:'gentle'},['Gentle']),
-  UI.h('option',{value:'supportive'},['Supportive']),
-  UI.h('option',{value:'direct'},['Direct'])
-]);
-voiceSel.value = (voice === 'clear') ? 'direct' : voice;
-
-const onlineStatus = UI.h('div',{class:'small muted', id:'onlineai-status'},['']);
-const updateOnlineStatus = async ()=>{
-  const oa = !!(await Store.getSetting('online_ai_enabled'));
-  onlineStatus.textContent = 'Online AI: ' + (oa ? 'On' : 'Off');
-};
-await updateOnlineStatus();
-
-const btnEnableAI = UI.h('button',{class:'btn small', type:'button', id:'btn-enable-online-ai'},['Enable Online AI…']);
-const btnDisableAI = UI.h('button',{class:'btn small ghost', type:'button', id:'btn-disable-online-ai'},['Disable Online AI']);
-const updateAIButtons = async ()=>{
-  const oa = !!(await Store.getSetting('online_ai_enabled'));
-  btnDisableAI.style.display = oa ? '' : 'none';
-};
-await updateAIButtons();
-
-function openOnlineAIConsent(){
-  return new Promise((resolve)=>{
-    const modal = UI.h('div',{class:'modal open', role:'dialog','aria-modal':'true'},[]);
-    const card = UI.h('div',{class:'modal-card'},[]);
-    const head = UI.h('div',{class:'modal-head'},[
-      UI.h('div',{class:'h2'},['Enable Online AI?']),
-      UI.h('button',{class:'icon-btn', type:'button', 'aria-label':'Close', title:'Close', onClick:()=>{ modal.remove(); resolve(false); }},['✕'])
+    const voiceSel = UI.h('select',{id:'companion-voice'},[
+      UI.h('option',{value:'gentle'},['Gentle']),
+      UI.h('option',{value:'supportive'},['Supportive']),
+      UI.h('option',{value:'direct'},['Direct'])
     ]);
-    const body = UI.h('div',{class:'stack'},[
-      UI.h('div',{class:'p'},['If you enable Online AI, some Companion messages may be generated by an online AI service. This can improve reflections and future features, but it means the text you type may be sent over the internet.']),
-      UI.h('div',{class:'small muted'},['What is sent: the text you enter in Companion + selected voice.']),
-      UI.h('div',{class:'small muted'},['What is not sent: your history (unless you paste it), your passphrase/lock data, or anything from other screens.']),
-      UI.h('div',{class:'small muted'},['You can disable Online AI anytime in Settings.'])
+    voiceSel.value = companionVoice;
+
+    // Provider dropdown
+    const providerSel = UI.h('select',{id:'ai-provider'},[
+      UI.h('option',{value:'deepseek'},['DeepSeek (recommended — cheapest)']),
+      UI.h('option',{value:'openai'},['OpenAI (GPT-4o mini)']),
+      UI.h('option',{value:'anthropic'},['Claude (Anthropic)'])
     ]);
-    const actions = UI.h('div',{class:'row modal-foot', style:'justify-content:flex-end;gap:10px;margin-top:10px'},[
-      UI.h('button',{class:'btn ghost', type:'button', onClick:()=>{ modal.remove(); resolve(false); }},['Cancel']),
-      UI.h('button',{class:'btn primary', type:'button', onClick:()=>{ modal.remove(); resolve(true); }},['I agree — Enable Online AI'])
+    providerSel.value = aiProvider;
+
+    // API key input
+    const apiKeyInput = UI.h('input',{
+      type:'password',
+      class:'input',
+      id:'ai-api-key',
+      placeholder:'Paste your API key here…',
+      style:'font-family:monospace;font-size:13px;'
+    },[]);
+    apiKeyInput.value = aiKey ? ('•'.repeat(Math.min(aiKey.length, 24))) : '';
+    let _keyEditing = false;
+
+    const showKeyBtn = UI.h('button',{class:'btn tiny', type:'button', id:'ai-show-key'},['Show']);
+    const saveKeyBtn = UI.h('button',{class:'btn primary tiny', type:'button', id:'ai-save-key'},['Save']);
+    const clearKeyBtn = UI.h('button',{class:'btn ghost tiny', type:'button', id:'ai-clear-key', style: aiKey ? '' : 'display:none'},['Clear']);
+
+    const keyStatusEl = UI.h('div',{class:'small muted', id:'ai-key-status'},[
+      aiKey ? 'API key saved.' : 'No key set — Companion uses offline templates.'
     ]);
-    card.appendChild(head); card.appendChild(body); card.appendChild(actions);
-    modal.appendChild(card);
-    modal.addEventListener('click',(e)=>{ if(e.target===modal){ modal.remove(); resolve(false); }});
-    document.body.appendChild(modal);
-  });
-}
 
-const companionCard = UI.h('div',{class:'card'},[
-  UI.h('div',{class:'h2', style:'display:flex;align-items:center;gap:10px;'},[
-    UI.h('span',{},['Companion']),
-    statusEl
-  ]),
-  UI.h('div',{class:'small'},['Optional support across the app. Works offline with templates, or online with AI (with consent).']),
-  UI.h('div',{class:'toggle-row'},[
-    UI.h('label',{class:'small', style:'display:flex;align-items:center;gap:10px;'},[
-      companionToggle,
-      UI.h('span',{},['Enable Companion'])
-    ])
-  ]),
-  UI.h('div',{class:'toggle-row'},[
-    UI.h('div',{class:'small', style:'min-width:120px;'},['Voice']),
-    voiceSel,
-    UI.h('div',{class:'small muted', style:'margin-left:auto;'},['Short, practical replies'])
-  ]),
-  UI.h('div',{class:'toggle-row', style:'flex-direction:column;align-items:stretch;gap:8px;'},[
-    onlineStatus,
-    UI.h('div',{class:'row', style:'gap:10px;'},[
-      btnEnableAI,
-      btnDisableAI
-    ]),
-    UI.h('div',{class:'small muted'},['Online AI may send your Companion text to an AI service. You will be asked to agree first.'])
-  ])
-]);
+    const testBtn = UI.h('button',{class:'btn small', type:'button', id:'ai-test-btn'},['Test connection']);
 
-stack.appendChild(companionCard);
+    // Provider links for getting keys
+    const providerLinks = {
+      deepseek: 'https://platform.deepseek.com/api_keys',
+      openai: 'https://platform.openai.com/api-keys',
+      anthropic: 'https://console.anthropic.com/settings/keys'
+    };
+    const getKeyLink = UI.h('a',{
+      href: providerLinks[aiProvider] || '#',
+      target:'_blank',
+      rel:'noopener noreferrer',
+      class:'small',
+      id:'ai-get-key-link',
+      style:'display:block;margin-top:4px;'
+    },['Get an API key →']);
 
-companionToggle.addEventListener('change', async ()=>{
-  const on = !!companionToggle.checked;
-  await Store.setSetting('companion_enabled', on);
-  if(!on){
-    await Store.setSetting('online_ai_enabled', false);
-    try{ if(window.TrackboardUI && TrackboardUI.destroyCompanion) TrackboardUI.destroyCompanion(); }catch(e){}
-  }else{
-    // Initialize
-    try{ if(window.TrackboardUI && TrackboardUI.setTalkVoice) TrackboardUI.setTalkVoice(voiceSel.value); }catch(e){}
-    try{ if(window.TrackboardUI && TrackboardUI.initCompanion) TrackboardUI.initCompanion(); }catch(e){}
-  }
-  await updateStatus();
-  await updateOnlineStatus();
-  await updateAIButtons();
-});
+    const companionCard = UI.h('div',{class:'card'},[
+      UI.h('div',{class:'h2', style:'display:flex;align-items:center;gap:10px;'},[
+        UI.h('span',{},['Companion']),
+        aiStatusEl
+      ]),
+      UI.h('div',{class:'small'},['Optional AI companion. Works offline with templates, or online with your own AI key.']),
+      UI.h('div',{class:'toggle-row'},[
+        UI.h('label',{class:'small', style:'display:flex;align-items:center;gap:10px;'},[
+          companionToggle,
+          UI.h('span',{},['Enable Companion'])
+        ])
+      ]),
+      UI.h('div',{class:'toggle-row'},[
+        UI.h('div',{class:'small', style:'min-width:80px;'},['Voice']),
+        voiceSel
+      ]),
+      UI.h('div',{class:'hr'},[]),
+      UI.h('div',{class:'h2'},['Your AI key']),
+      UI.h('div',{class:'small muted'},['Your key is stored only on this device. It never leaves your browser except to call the AI provider directly.']),
+      UI.h('div',{class:'toggle-row', style:'margin-top:8px;'},[
+        UI.h('div',{class:'small', style:'min-width:80px;'},['Provider']),
+        providerSel,
+        getKeyLink
+      ]),
+      UI.h('div',{class:'row', style:'margin-top:8px;gap:6px;flex-wrap:wrap;'},[
+        apiKeyInput,
+        showKeyBtn
+      ]),
+      UI.h('div',{class:'row', style:'margin-top:6px;gap:6px;'},[
+        saveKeyBtn,
+        clearKeyBtn,
+        testBtn
+      ]),
+      keyStatusEl
+    ]);
 
-voiceSel.addEventListener('change', async ()=>{
-  const v = voiceSel.value;
-  await Store.setSetting('companion_voice', v);
-  try{ if(window.TrackboardUI && TrackboardUI.setTalkVoice) TrackboardUI.setTalkVoice(v); }catch(e){}
-  UI.toast('Voice updated.');
-});
+    stack.appendChild(companionCard);
 
-btnEnableAI.addEventListener('click', async ()=>{
-  const ce = !!(await Store.getSetting('companion_enabled'));
-  if(!ce){
-    UI.toast('Enable Companion first.');
-    return;
-  }
-  const ok = await openOnlineAIConsent();
-  await Store.setSetting('online_ai_enabled', !!ok);
-  await updateStatus();
-  await updateOnlineStatus();
-  await updateAIButtons();
-  if(ok) UI.toast('Online AI enabled.');
-});
+    // Companion toggle
+    companionToggle.addEventListener('change', async ()=>{
+      const on = !!companionToggle.checked;
+      await Store.setSetting('companion_enabled', on);
+      if(!on){
+        try{ if(window.TrackboardUI && TrackboardUI.destroyCompanion) TrackboardUI.destroyCompanion(); }catch(e){}
+      }else{
+        try{ if(window.TrackboardUI && TrackboardUI.setTalkVoice) TrackboardUI.setTalkVoice(voiceSel.value); }catch(e){}
+        try{ if(window.TrackboardUI && TrackboardUI.initCompanion) TrackboardUI.initCompanion(); }catch(e){}
+      }
+      await updateAIStatus();
+    });
 
-btnDisableAI.addEventListener('click', async ()=>{
-  await Store.setSetting('online_ai_enabled', false);
-  await updateStatus();
-  await updateOnlineStatus();
-  await updateAIButtons();
-  UI.toast('Online AI disabled.');
-});
+    voiceSel.addEventListener('change', async ()=>{
+      await Store.setSetting('companion_voice', voiceSel.value);
+      try{ if(window.TrackboardUI && TrackboardUI.setTalkVoice) TrackboardUI.setTalkVoice(voiceSel.value); }catch(e){}
+      UI.toast('Voice updated.');
+    });
 
-    // Security
+    providerSel.addEventListener('change', async ()=>{
+      await Store.setSetting('ai_provider', providerSel.value);
+      getKeyLink.href = providerLinks[providerSel.value] || '#';
+      UI.toast('Provider updated.');
+    });
+
+    showKeyBtn.addEventListener('click', ()=>{
+      if(!_keyEditing){
+        apiKeyInput.type = 'text';
+        // Show actual key if stored
+        Store.getSetting('ai_api_key').then(k=>{ apiKeyInput.value = k || ''; });
+        showKeyBtn.textContent = 'Hide';
+        _keyEditing = true;
+      }else{
+        apiKeyInput.type = 'password';
+        Store.getSetting('ai_api_key').then(k=>{
+          apiKeyInput.value = k ? '•'.repeat(Math.min(k.length, 24)) : '';
+        });
+        showKeyBtn.textContent = 'Show';
+        _keyEditing = false;
+      }
+    });
+
+    saveKeyBtn.addEventListener('click', async ()=>{
+      const raw = apiKeyInput.value.trim();
+      if(!raw || raw.startsWith('•')){
+        UI.toast('No new key to save.');
+        return;
+      }
+      await Store.setSetting('ai_api_key', raw);
+      keyStatusEl.textContent = 'API key saved.';
+      clearKeyBtn.style.display = '';
+      apiKeyInput.type = 'password';
+      apiKeyInput.value = '•'.repeat(Math.min(raw.length, 24));
+      showKeyBtn.textContent = 'Show';
+      _keyEditing = false;
+      await updateAIStatus();
+      UI.toast('Key saved.');
+    });
+
+    clearKeyBtn.addEventListener('click', async ()=>{
+      await Store.setSetting('ai_api_key', '');
+      apiKeyInput.value = '';
+      keyStatusEl.textContent = 'No key set — Companion uses offline templates.';
+      clearKeyBtn.style.display = 'none';
+      await updateAIStatus();
+      UI.toast('Key cleared.');
+    });
+
+    testBtn.addEventListener('click', async ()=>{
+      const key = await Store.getSetting('ai_api_key');
+      if(!key || key.trim().length < 10){
+        UI.toast('Save an API key first.');
+        return;
+      }
+      testBtn.textContent = 'Testing…';
+      testBtn.disabled = true;
+      try{
+        const result = await AI.call('Say "ok" and nothing else.', { context: '' });
+        keyStatusEl.textContent = 'Connection OK. Response: "' + result.slice(0,60) + '"';
+        UI.toast('Connection OK!');
+      }catch(err){
+        const msg = err.message || String(err);
+        keyStatusEl.textContent = 'Error: ' + msg;
+        UI.toast('Connection failed. Check key + provider.');
+      }finally{
+        testBtn.textContent = 'Test connection';
+        testBtn.disabled = false;
+      }
+    });
+
+    // --- Notifications ---
+    const notifCard = UI.h('div',{class:'card'},[
+      UI.h('div',{class:'h2'},['Reminders']),
+      UI.h('div',{class:'small'},['Get a daily nudge to check in. Works best when the app is installed on your home screen.']),
+      UI.h('div',{class:'hr'},[]),
+    ]);
+
+    const notifStatus = UI.h('div',{class:'small muted', id:'notif-status'},[]);
+    const notifEnabled = !!(await Store.getSetting('notif_enabled'));
+    const notifTime = (await Store.getSetting('notif_time')) || '20:00';
+
+    async function renderNotifStatus(){
+      const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+      const en = !!(await Store.getSetting('notif_enabled'));
+      if(perm === 'unsupported') notifStatus.textContent = 'Notifications not supported in this browser.';
+      else if(perm === 'denied') notifStatus.textContent = 'Notifications are blocked. Enable them in browser settings.';
+      else if(perm === 'granted' && en) notifStatus.textContent = 'Reminders on. Works when the app is open or running in background.';
+      else notifStatus.textContent = 'Reminders off.';
+    }
+    await renderNotifStatus();
+
+    const notifToggle = UI.h('input',{type:'checkbox', id:'notif-toggle'});
+    notifToggle.checked = notifEnabled;
+
+    const timeInput = UI.h('input',{
+      type:'time',
+      class:'input',
+      id:'notif-time',
+      value: notifTime,
+      style:'width:120px;'
+    },[]);
+
+    notifCard.appendChild(UI.h('div',{class:'toggle-row'},[
+      UI.h('label',{class:'small', style:'display:flex;align-items:center;gap:10px;'},[
+        notifToggle,
+        UI.h('span',{},['Enable daily reminder'])
+      ])
+    ]));
+    notifCard.appendChild(UI.h('div',{class:'toggle-row'},[
+      UI.h('div',{class:'small', style:'min-width:100px;'},['Reminder time']),
+      timeInput
+    ]));
+    notifCard.appendChild(notifStatus);
+
+    notifToggle.addEventListener('change', async ()=>{
+      const on = !!notifToggle.checked;
+      if(on && 'Notification' in window && Notification.permission !== 'granted'){
+        const perm = await Notification.requestPermission();
+        if(perm !== 'granted'){
+          UI.toast('Permission denied — enable notifications in browser settings.');
+          notifToggle.checked = false;
+          await renderNotifStatus();
+          return;
+        }
+      }
+      await Store.setSetting('notif_enabled', on);
+      await renderNotifStatus();
+      if(on){
+        UI.toast('Reminders on. Open the app daily for them to fire.');
+        if(window._scheduleReminder) window._scheduleReminder();
+      }else{
+        UI.toast('Reminders off.');
+        if(window._cancelReminder) window._cancelReminder();
+      }
+    });
+
+    timeInput.addEventListener('change', async ()=>{
+      await Store.setSetting('notif_time', timeInput.value);
+      if(window._scheduleReminder) window._scheduleReminder();
+      UI.toast('Reminder time saved.');
+    });
+
+    stack.appendChild(notifCard);
+
+    // --- Security ---
     const sec = await Store.getSetting('security') || {enabled:false, autoLock:'refresh'};
     const secCard = UI.h('div',{class:'card'},[
       UI.h('div',{class:'h2'},['Protect this notebook']),
@@ -268,21 +354,11 @@ btnDisableAI.addEventListener('click', async ()=>{
       UI.h('div',{id:'sec-area', style:'margin-top:10px;display:none;'},[])
     ]);
 
-    // Reminders guide (local-only)
-    const remCard = UI.h('div',{class:'card soft'},[
-      UI.h('div',{class:'h2'},['Phone reminders']),
-      UI.h('div',{class:'small'},['Best privacy. Set these in your phone’s Reminders/Alarm.']),
-      UI.h('div',{class:'hr'},[]),
-      UI.h('div',{class:'small'},['Check-in: 10:30 / 15:30 / 20:30']),
-      UI.h('div',{class:'small'},['Sleep: reminder at 00:30 (gentle nudge)'])
-    ]);
-
     stack.appendChild(themeCard);
     stack.appendChild(secCard);
-    stack.appendChild(remCard);
     mount.appendChild(stack);
 
-    // Theme interactions
+    // --- Theme interactions ---
     themeCard.addEventListener('click', async (e)=>{
       const btn = e.target.closest('[data-theme]');
       if(!btn) return;
@@ -294,7 +370,6 @@ btnDisableAI.addEventListener('click', async ()=>{
       UI.toast('Theme updated.');
     });
 
-    // Rest mode interactions (quiet visuals)
     const restPill = themeCard.querySelector('.pill');
     const restOff = document.getElementById('rest-off');
     const restOn = document.getElementById('rest-on');
@@ -308,20 +383,16 @@ btnDisableAI.addEventListener('click', async ()=>{
     if(restOff) restOff.addEventListener('click', ()=> setRest(false));
     if(restOn) restOn.addEventListener('click', ()=> setRest(true));
 
-    // Security UI
+    // --- Security UI ---
     const enabledBox = document.getElementById('sec-enabled');
     const area = document.getElementById('sec-area');
     enabledBox.checked = !!sec.enabled;
 
     function renderSecArea(){
       area.innerHTML = '';
-      if(!enabledBox.checked){
-        area.style.display = 'none';
-        return;
-      }
+      if(!enabledBox.checked){ area.style.display = 'none'; return; }
       area.style.display = 'block';
 
-      // Auto-lock
       area.appendChild(UI.h('div',{class:'small'},['Auto-lock']));
       const row = UI.h('div',{class:'row', style:'margin-top:6px'},[
         UI.h('button',{class:'btn small', type:'button', 'data-autolock':'refresh'},['On refresh']),
@@ -329,62 +400,43 @@ btnDisableAI.addEventListener('click', async ()=>{
         UI.h('button',{class:'btn small', type:'button', 'data-autolock':'30m'},['After 30 min'])
       ]);
       area.appendChild(row);
-
       const mode = sec.autoLock || 'refresh';
       row.querySelectorAll('[data-autolock]').forEach(b=>{
         b.classList.toggle('primary', b.dataset.autolock === mode);
       });
 
-      // Change passphrase
       area.appendChild(UI.h('div',{class:'hr'},[]));
       area.appendChild(UI.h('div',{class:'small'},['Change passphrase']));
       area.appendChild(UI.h('button',{class:'btn', type:'button', id:'btn-chpass'},['Change']));
-
-      // Lock now
       area.appendChild(UI.h('div',{class:'hr'},[]));
       area.appendChild(UI.h('button',{class:'btn', type:'button', id:'btn-locknow'},['Lock now']));
-
-      // Disable
       area.appendChild(UI.h('div',{class:'hr'},[]));
       area.appendChild(UI.h('button',{class:'btn', type:'button', id:'btn-disable'},['Disable passphrase']));
     }
-
     renderSecArea();
 
     enabledBox.addEventListener('change', async ()=>{
       if(enabledBox.checked){
         const pass = prompt('Set a passphrase (a sentence you can remember):');
         if(!pass || pass.trim().length < 4){
-          UI.toast('Passphrase not set.');
-          enabledBox.checked = false;
-          renderSecArea();
-          return;
+          UI.toast('Passphrase not set.'); enabledBox.checked = false; renderSecArea(); return;
         }
-        const auto = sec.autoLock || 'refresh';
         try{
-          await Security.enable(pass.trim(), auto);
+          await Security.enable(pass.trim(), sec.autoLock || 'refresh');
           sec.enabled = true;
           UI.toast('Passphrase enabled.');
         }catch(e){
-          console.error(e);
-          UI.toast('Could not enable passphrase.');
-          enabledBox.checked = false;
+          UI.toast('Could not enable passphrase.'); enabledBox.checked = false;
         }
       } else {
         const pass = prompt('Enter your passphrase to disable:');
-        if(!pass){
-          enabledBox.checked = true;
-          renderSecArea();
-          return;
-        }
+        if(!pass){ enabledBox.checked = true; renderSecArea(); return; }
         try{
           await Security.disable(pass.trim());
           sec.enabled = false;
           UI.toast('Passphrase disabled.');
         }catch(e){
-          console.error(e);
-          UI.toast('Wrong passphrase.');
-          enabledBox.checked = true;
+          UI.toast('Wrong passphrase.'); enabledBox.checked = true;
         }
       }
       const s = await Store.getSetting('security') || {enabled:false, autoLock:'refresh'};
@@ -396,30 +448,22 @@ btnDisableAI.addEventListener('click', async ()=>{
     secCard.addEventListener('click', async (e)=>{
       const btn = e.target.closest('[data-autolock]');
       if(btn){
-        const mode = btn.dataset.autolock;
-        sec.autoLock = mode;
-        await Security.setAutoLock(mode);
+        sec.autoLock = btn.dataset.autolock;
+        await Security.setAutoLock(btn.dataset.autolock);
         area.querySelectorAll('[data-autolock]').forEach(b=>{
-          b.classList.toggle('primary', b.dataset.autolock === mode);
+          b.classList.toggle('primary', b.dataset.autolock === btn.dataset.autolock);
         });
         UI.toast('Auto-lock updated.');
       }
-
-      if(e.target && e.target.id === 'btn-locknow'){
-        Security.lock();
-      }
+      if(e.target && e.target.id === 'btn-locknow') Security.lock();
       if(e.target && e.target.id === 'btn-disable'){
         const pass = prompt('Enter your passphrase to disable:');
         if(!pass) return;
         try{
           await Security.disable(pass.trim());
-          enabledBox.checked = false;
-          sec.enabled = false;
-          UI.toast('Passphrase disabled.');
-          renderSecArea();
-        }catch(err){
-          UI.toast('Wrong passphrase.');
-        }
+          enabledBox.checked = false; sec.enabled = false;
+          UI.toast('Passphrase disabled.'); renderSecArea();
+        }catch(err){ UI.toast('Wrong passphrase.'); }
       }
       if(e.target && e.target.id === 'btn-chpass'){
         const oldp = prompt('Old passphrase:');
@@ -429,10 +473,7 @@ btnDisableAI.addEventListener('click', async ()=>{
         try{
           await Security.changePassphrase(oldp.trim(), newp.trim());
           UI.toast('Passphrase updated.');
-        }catch(err){
-          console.error(err);
-          UI.toast('Could not update passphrase.');
-        }
+        }catch(err){ UI.toast('Could not update passphrase.'); }
       }
     });
   });

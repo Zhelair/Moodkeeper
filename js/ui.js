@@ -452,11 +452,24 @@ function renderTalkReply(){
     return;
   }
   _talkReplyEl.style.display = '';
-  const kindLabel = _talkLast.kind === 'mirror' ? 'Mirror' : (_talkLast.kind === 'perspective' ? 'Gentle perspective' : (_talkLast.kind === 'weekly' ? 'Weekly insight' : 'Note'));
+  const LABELS = {
+    mirror: 'Mirror', perspective: 'Gentle perspective', weekly: 'Weekly insight',
+    morning: 'Morning briefing', evening: 'Evening debrief', ai: 'Companion'
+  };
+  const kindLabel = LABELS[_talkLast.kind] || 'Note';
   const voiceLabel = getTalkVoiceLabel(_talkLast.voice);
+  const aiFlag = _talkLast.ai ? ' · AI' : '';
   _talkReplyEl.innerHTML = '';
-  _talkReplyEl.appendChild(h('div', { class:'talkreply-meta muted' }, [kindLabel + ' · ' + voiceLabel]));
+  _talkReplyEl.appendChild(h('div', { class:'talkreply-meta muted' }, [kindLabel + ' · ' + voiceLabel + aiFlag]));
   _talkReplyEl.appendChild(h('div', { class:'talkreply-text' }, [_talkLast.text]));
+}
+
+function showTalkLoading(label){
+  if(!_talkReplyEl) return;
+  _talkReplyEl.style.display = '';
+  _talkReplyEl.innerHTML = '';
+  _talkReplyEl.appendChild(h('div', { class:'talkreply-meta muted' }, [label || 'Thinking…']));
+  _talkReplyEl.appendChild(h('div', { class:'talkreply-text muted' }, ['…']));
 }
 
 function classifyTone(raw){
@@ -666,51 +679,113 @@ function mockPerspective(text){
   return 'You don’t need to solve this right now. A small pause or one gentle step is enough.';
 }
 
-function runMock(kind){
-  const t = (_talkDraft||'').trim();
+async function runMock(kind){
+  const t = (_talkDraft||’’).trim();
 
   // If a puzzle is awaiting an answer, treat the next input as the answer.
-  if(_talkMini && _talkMini.mode === 'puzzle'){
+  if(_talkMini && _talkMini.mode === ‘puzzle’){
     if(!t){
       const msg = "Type your answer in the box, then press the button again.";
-      _talkLast = { kind:'puzzle', text: msg, voice: _talkVoice, ts: Date.now() };
+      _talkLast = { kind:’puzzle’, text: msg, voice: _talkVoice, ts: Date.now() };
       renderTalkReply();
       return;
     }
     const out = _puzzleCheck(t);
-    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
+    _talkLast = { kind:’puzzle’, text: out, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
   }
 
   // Natural language fun intents (jokes / puzzles)
   const intent = detectFunIntent(t);
-  if(intent === 'joke'){
+  if(intent === ‘joke’){
     const out = _jokeReply(_talkVoice);
-    _talkLast = { kind:'joke', text: out, voice: _talkVoice, ts: Date.now() };
+    _talkLast = { kind:’joke’, text: out, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
   }
-  if(intent === 'puzzle'){
+  if(intent === ‘puzzle’){
     const out = _puzzleAsk();
-    _talkLast = { kind:'puzzle', text: out, voice: _talkVoice, ts: Date.now() };
+    _talkLast = { kind:’puzzle’, text: out, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
   }
 
-  // Existing behavior: Mirror / Perspective
   if(!t || t.length < 4){
-    const msg = (kind === 'mirror')
-      ? 'There isn’t enough here for me to mirror yet.'
-      : 'There isn’t much here to reflect on yet. That’s okay.';
+    const msg = (kind === ‘mirror’)
+      ? ‘There isn\’t enough here for me to mirror yet.’
+      : ‘There isn\’t much here to reflect on yet. That\’s okay.’;
     _talkLast = { kind, text: msg, voice: _talkVoice, ts: Date.now() };
     renderTalkReply();
     return;
   }
 
-  const out = (kind === 'mirror') ? mockMirror(t) : mockPerspective(t);
+  // Use AI if available, fall back to offline templates
+  if(window.AI){
+    const ready = await AI.hasKey().catch(()=>false);
+    if(ready){
+      showTalkLoading(kind === ‘mirror’ ? ‘Reflecting…’ : ‘Finding perspective…’);
+      try{
+        const prompt = kind === ‘mirror’
+          ? ‘Mirror back the emotional tone of what I wrote, briefly: ‘ + t
+          : ‘Offer a gentle perspective on what I wrote, briefly: ‘ + t;
+        const reply = await AI.call(prompt, { voice: _talkVoice });
+        _talkLast = { kind, text: reply, voice: _talkVoice, ts: Date.now(), ai: true };
+        renderTalkReply();
+        return;
+      }catch(err){
+        // Fall through to offline template
+      }
+    }
+  }
+
+  const out = (kind === ‘mirror’) ? mockMirror(t) : mockPerspective(t);
   _talkLast = { kind, text: out, voice: _talkVoice, ts: Date.now() };
   renderTalkReply();
+}
+
+async function runMorningBriefing(){
+  if(!window.AI){
+    UI.toast && UI.toast(‘AI not available.’);
+    return;
+  }
+  const ready = await AI.hasKey().catch(()=>false);
+  if(!ready){
+    _talkLast = { kind:’morning’, text:’Add your AI key in Settings to get a personalised morning briefing.’, voice:_talkVoice, ts:Date.now() };
+    renderTalkReply();
+    return;
+  }
+  showTalkLoading(‘Morning briefing…’);
+  try{
+    const reply = await AI.getMorningBriefing();
+    _talkLast = { kind:’morning’, text:reply, voice:_talkVoice, ts:Date.now(), ai:true };
+    renderTalkReply();
+  }catch(err){
+    _talkLast = { kind:’morning’, text:’Couldn\’t reach AI right now. Check your key in Settings.’, voice:_talkVoice, ts:Date.now() };
+    renderTalkReply();
+  }
+}
+
+async function runEveningDebrief(){
+  if(!window.AI){
+    UI.toast && UI.toast(‘AI not available.’);
+    return;
+  }
+  const ready = await AI.hasKey().catch(()=>false);
+  if(!ready){
+    _talkLast = { kind:’evening’, text:’Add your AI key in Settings to get a personalised evening debrief.’, voice:_talkVoice, ts:Date.now() };
+    renderTalkReply();
+    return;
+  }
+  showTalkLoading(‘Evening debrief…’);
+  try{
+    const reply = await AI.getEveningDebrief();
+    _talkLast = { kind:’evening’, text:reply, voice:_talkVoice, ts:Date.now(), ai:true };
+    renderTalkReply();
+  }catch(err){
+    _talkLast = { kind:’evening’, text:’Couldn\’t reach AI right now. Check your key in Settings.’, voice:_talkVoice, ts:Date.now() };
+    renderTalkReply();
+  }
 }
   async function runWeeklyInsight(){
     try{
@@ -863,19 +938,15 @@ h('div', { class:'talkmeta' }, [
 
             _talkDraft = '';
             if(_talkTextEl) _talkTextEl.value = '';
-            // Reset checkbox for next message
             try{ const cb2 = _talkDrawer && _talkDrawer.querySelector('#talk-save'); if(cb2) cb2.checked = false; }catch(e){}
             toast(saved ? 'Saved.' : 'Done.');
           }}, ['Just write']),
-          h('button', { class:'btn ghost full', type:'button', onClick:()=>{
-            runMock('mirror');
-          }}, ['Mirror this']),
-          h('button', { class:'btn ghost full', type:'button', onClick:()=>{
-            runMock('perspective');
-          }}, ['Gentle perspective']),
-          (_talkWeeklyBtn = h('button', { class:'btn ghost full', type:'button', onClick:()=>{
-            runWeeklyInsight();
-          }}, ['What did you notice this week?']))
+          h('button', { class:'btn ghost full', type:'button', onClick:()=>{ runMock('mirror'); }}, ['Mirror this']),
+          h('button', { class:'btn ghost full', type:'button', onClick:()=>{ runMock('perspective'); }}, ['Gentle perspective']),
+          (_talkWeeklyBtn = h('button', { class:'btn ghost full', type:'button', onClick:()=>{ runWeeklyInsight(); }}, ['What did you notice this week?'])),
+          h('div', { class:'talkactions-divider' }, []),
+          h('button', { class:'btn ghost full', type:'button', onClick:()=>{ runMorningBriefing(); }}, ['☀️  Morning briefing']),
+          h('button', { class:'btn ghost full', type:'button', onClick:()=>{ runEveningDebrief(); }}, ['🌙  Evening debrief'])
         ]),
         h('div', { class:'talkfoot muted' }, [
           'No auto-save. Close anytime.'

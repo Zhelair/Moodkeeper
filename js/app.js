@@ -190,7 +190,62 @@ async function showCompanionIntro(){
     if(window.Security && Security.isEnabled() && !Security.isUnlocked()){
       TrackboardRouter.go('unlock');
     }
+
+    // Daily reminder scheduler
+    _scheduleReminder();
   }
+
+  // Schedule a notification for today's reminder time.
+  // Runs via setTimeout — works when the app is open or backgrounded on Android.
+  let _reminderTimer = null;
+
+  window._cancelReminder = function(){
+    if(_reminderTimer){ clearTimeout(_reminderTimer); _reminderTimer = null; }
+  };
+
+  window._scheduleReminder = async function(){
+    window._cancelReminder();
+    if(!('Notification' in window)) return;
+    if(Notification.permission !== 'granted') return;
+    if(!window.Store) return;
+
+    const enabled = !!(await Store.getSetting('notif_enabled'));
+    if(!enabled) return;
+
+    const timeStr = (await Store.getSetting('notif_time')) || '20:00';
+    const [hh, mm] = timeStr.split(':').map(Number);
+    if(isNaN(hh) || isNaN(mm)) return;
+
+    const now = new Date();
+    const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+    if(target <= now) return; // already past for today
+
+    const delay = target.getTime() - now.getTime();
+    _reminderTimer = setTimeout(async ()=>{
+      _reminderTimer = null;
+      // Check still enabled
+      const still = !!(await Store.getSetting('notif_enabled').catch(()=>false));
+      if(!still) return;
+
+      // Check if already checked in today
+      const todayEntry = await Store.getEntry(Store.todayKey()).catch(()=>null);
+      const checkedIn = todayEntry && typeof todayEntry.mood === 'number';
+
+      const title = checkedIn ? 'Moodkeeper' : 'Time for a quick check-in';
+      const body = checkedIn
+        ? 'Your notebook is ready whenever you need it.'
+        : 'Ten seconds is enough. How are you feeling?';
+
+      try{
+        if(navigator.serviceWorker && navigator.serviceWorker.ready){
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification(title, { body, icon: './assets/app-icon-192.png', badge: './assets/app-icon-192.png', tag: 'mk-daily' });
+        }else{
+          new Notification(title, { body, icon: './assets/app-icon-192.png' });
+        }
+      }catch(e){}
+    }, delay);
+  };
 
   window.addEventListener('DOMContentLoaded', boot);
 })();

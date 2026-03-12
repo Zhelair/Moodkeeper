@@ -1,6 +1,6 @@
 
 // Bump this value whenever assets change so GitHub Pages + SW cache don't serve stale JS.
-const CACHE = 'moodkeeper-v1-6-6';
+const CACHE = 'moodkeeper-v1-7-0';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './js/ui.js',
   './js/store.js',
   './js/security.js',
+  './js/ai.js',
   './js/app.js',
   './js/features/home.js',
   './js/features/checkin.js',
@@ -47,6 +48,33 @@ self.addEventListener('fetch', (e)=>{
         caches.open(CACHE).then(c=>c.put(req, copy)).catch(()=>{});
         return resp;
       }).catch(()=>cached);
+    })
+  );
+});
+
+// Handle notification clicks — open or focus the app
+self.addEventListener('notificationclick', (e)=>{
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(clients=>{
+      for(const client of clients){
+        if(client.url && client.focus) return client.focus();
+      }
+      if(self.clients.openWindow) return self.clients.openWindow('./');
+    })
+  );
+});
+
+// Push handler (for future web push integration)
+self.addEventListener('push', (e)=>{
+  let data = { title:'Moodkeeper', body:'Your notebook is ready.' };
+  try{ if(e.data) data = Object.assign(data, e.data.json()); }catch(_){}
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: './assets/app-icon-192.png',
+      badge: './assets/app-icon-192.png',
+      tag: 'mk-push'
     })
   );
 });
